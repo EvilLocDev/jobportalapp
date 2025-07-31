@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from ckeditor.fields import RichTextField
+from cloudinary.models import CloudinaryField
 
 class User(AbstractUser):
     pass
@@ -20,7 +21,7 @@ class Profile(BaseModel):
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    avatar = models.ImageField()
+    avatar = CloudinaryField(null = True)
     phone_number = models.CharField(max_length=20)
     address = models.CharField(max_length=255)
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
@@ -44,7 +45,7 @@ class Company(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=120)
     description = models.TextField()
-    logo = models.ImageField()
+    logo = CloudinaryField()
     website = models.URLField()
     address = models.CharField(max_length=255)
 

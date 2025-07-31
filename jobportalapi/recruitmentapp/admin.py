@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.template.response import TemplateResponse
-from recruitmentapp.models import Profile, Resume, Company, Job, Application
+from recruitmentapp.models import User, Profile, Resume, Company, Job, Application
 from django import forms
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from django.urls import path
@@ -39,6 +39,7 @@ class MyAdminSite(admin.AdminSite):
 
 admin_site = MyAdminSite(name='eJob')
 
+admin_site.register(User)
 admin_site.register(Profile)
 admin_site.register(Resume)
 admin_site.register(Company)

@@ -40,7 +40,21 @@ INSTALLED_APPS = [
     'recruitmentapp.apps.RecruitmentappConfig',
     'ckeditor',
     'ckeditor_uploader',
+    'rest_framework',
+    'drf_yasg',
 ]
+
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
+
+# Configuration
+cloudinary.config(
+    cloud_name = "dlysaj8pb",
+    api_key = "462814331829971",
+    api_secret = "T9kdTT7UVuzWUS7WBXJfI7eX_xE",
+    secure=True
+)
 
 CKEDITOR_UPLOAD_PATH = "ckeditors/jobs/"
 
