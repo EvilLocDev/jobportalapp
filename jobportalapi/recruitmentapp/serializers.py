@@ -4,7 +4,20 @@ from .models import User, Profile, Resume, Company, Job, Application
 class UserSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email']
+        fields = ['username', 'password', 'first_name', 'last_name', 'email']
+        extra_kwargs = {
+            'password': {
+                'write_only': True
+            }
+        }
+
+    def create(self, validated_data):
+        data = validated_data.copy()
+        u = User(**data)
+        u.set_password(u.password)
+        u.save()
+
+        return u
 
 class ProfileSerializer(ModelSerializer):
     def to_representation(self, instance):
@@ -14,7 +27,7 @@ class ProfileSerializer(ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ['id', 'user_id', 'avatar', 'phone_number', 'address', 'user_type']
+        fields = ['avatar', 'phone_number', 'address', 'user_type']
 
 class ResumeSerializer(ModelSerializer):
     class Meta:
