@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from .models import User, Profile, Resume, Company, Job, Application
 
 class UserSerializer(ModelSerializer):
@@ -58,7 +58,14 @@ class JobSerializer(ModelSerializer):
 
 class JobDetailSerializer(JobSerializer):
     company = CompanySerializer()
+    saved_job = SerializerMethodField()
+
+    def get_saved_job(self, job):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return job.savejob_set.filter(user=request.user, active=True).exists()
+        return None
 
     class Meta:
         model = JobSerializer.Meta.model
-        fields = JobSerializer.Meta.fields + ['description', 'location', 'company']
+        fields = JobSerializer.Meta.fields + ['description', 'location', 'company', 'saved_job']

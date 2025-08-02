@@ -3,14 +3,13 @@ from rest_framework.response import Response
 
 from . import serializers, paginators
 from rest_framework import viewsets, generics, parsers, permissions
-from .models import User, Profile, Resume, Company, Job, Application
+from .models import User, Profile, Resume, Company, Job, SaveJob, Application
 
 class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
     queryset = User.objects.filter(is_active = True)
     serializer_class = serializers.UserSerializer
     pagination_class = paginators.ItemPaginator
 
-    # users/?q=<keyword>
     def get_queryset(self):
         query = self.queryset
 
@@ -27,6 +26,7 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
         resumes = self.get_object().resume_set.filter(active=True)
         return Response(serializers.ResumeSerializer(resumes, many=True).data)
 
+    # /users/current-user/
     @action(methods=['get', 'patch'], url_path='current-user', detail=False, permission_classes=[permissions.IsAuthenticated])
     def get_current_user(self, request):
         u = request.user
@@ -94,3 +94,13 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
             query = query.filter(company_id=com_id)
 
         return query
+
+    # /jobs/{id}/save-job/
+    @action(methods=['post'], detail=True, url_path='save-job', permission_classes=[permissions.IsAuthenticated])
+    def save_job(self, request, pk):
+        sa, created = SaveJob.objects.get_or_create(user=request.user, Job_id=pk)
+        if not created:
+            sa.active = not sa.active
+        sa.save()
+
+        return Response(serializers.JobDetailSerializer(self.get_object(), context={'request': request}).data)
