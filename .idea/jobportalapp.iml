@@ -5,7 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/ubuntuvenv" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.12 (jobportalapp)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.13 virtualenv at E:\jobportalapp\venv" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">
