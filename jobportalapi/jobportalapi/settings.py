@@ -25,8 +25,9 @@ SECRET_KEY = 'django-insecure-$^lan+gwgw*wc*ma&4odh@7m#u#nj2pvpzo=6+%se_lu2qz07n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_ORIGIN = ['*']
 
 # Application definition
 
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'oauth2_provider',
+    'corsheaders',
 ]
 
 OAUTH2_PROVIDER = { 'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore' }
@@ -73,6 +75,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'jobportalapi.urls'
