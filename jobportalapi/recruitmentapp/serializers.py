@@ -54,7 +54,7 @@ class CompanySerializer(ModelSerializer):
 class JobSerializer(ModelSerializer):
     class Meta:
         model = Job
-        fields = ['id', 'company_id', 'title', 'salary', 'job_type']
+        fields = ['id', 'company_id', 'title', 'salary', 'job_type', 'created_date']
 
 class JobDetailSerializer(JobSerializer):
     company = CompanySerializer()

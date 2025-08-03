@@ -79,6 +79,7 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
     # jobs/<id>/
     queryset = Job.objects.select_related('company').filter(active=True) # Lay nhieu job thuoc mot cong ty
     serializer_class = serializers.JobDetailSerializer
+    pagination_class = paginators.ItemPaginator
 
     def get_queryset(self):
         query = self.queryset
