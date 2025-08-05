@@ -4,7 +4,7 @@ from ckeditor.fields import RichTextField
 from cloudinary.models import CloudinaryField
 
 class User(AbstractUser):
-    pass
+    avatar = CloudinaryField(null = True)
 
 class BaseModel(models.Model):
     active = models.BooleanField(default=True)
@@ -21,7 +21,6 @@ class Profile(BaseModel):
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    avatar = CloudinaryField(null = True)
     phone_number = models.CharField(max_length=20)
     address = models.CharField(max_length=255)
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
@@ -61,7 +60,7 @@ class Job(BaseModel):
 
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
-    description = RichTextField()
+    description = RichTextField(null=True)
     location = models.CharField(max_length=255)
     salary = models.IntegerField()
     job_type = models.CharField(max_length=20, choices=JOB_TYPE_CHOICES)
