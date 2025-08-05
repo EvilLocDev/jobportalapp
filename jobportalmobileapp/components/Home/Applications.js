@@ -32,10 +32,10 @@ const Applications = ({route}) => {
     return (
       <View>
           <FlatList ListFooterComponent={loading && <ActivityIndicator />} data={applications}
-                                  renderItem={({item}) => <List.Item key={`Application${item.id}`} title={item.title}
+                                  renderItem={({item}) => <List.Item key={`Application${item.id}`} title={item.candidate.username}
                                                                 description={item.created_date}
                                                                 left={() => <TouchableOpacity onPress={() => nav.navigate('application-details', {'applicationId': item.id})}>
-                                                                    <Image style={MyStyles.avatar} source={{uri: item.candidate?.profile?.avatar}} />
+                                                                    <Image style={MyStyles.avatar} source={{uri: item.candidate.avatar}} />
                                                                 </TouchableOpacity>} />} />
       </View>
     );

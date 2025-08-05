@@ -2,9 +2,14 @@ from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from .models import User, Profile, Resume, Company, Job, Application
 
 class UserSerializer(ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['avatar'] = instance.avatar.url if instance.avatar else ''
+        return data
+
     class Meta:
         model = User
-        fields = ['username', 'password', 'first_name', 'last_name', 'email', 'profile']
+        fields = ['username', 'password', 'first_name', 'last_name', 'avatar', 'email']
         extra_kwargs = {
             'password': {
                 'write_only': True
@@ -20,14 +25,9 @@ class UserSerializer(ModelSerializer):
         return u
 
 class ProfileSerializer(ModelSerializer):
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['avatar'] = instance.avatar.url if instance.avatar else ''
-        return data
-
     class Meta:
         model = Profile
-        fields = ['avatar', 'phone_number', 'address', 'user_type']
+        fields = ['phone_number', 'address', 'user_type']
 
 class ResumeSerializer(ModelSerializer):
     class Meta:
@@ -39,7 +39,7 @@ class ResumeDetailSerializer(ResumeSerializer):
 
     class Meta:
         model = ResumeSerializer.Meta.model
-        fields = ResumeSerializer.Meta.fields + ['file_path', 'candidate']
+        fields = ResumeSerializer.Meta.fields + ['file', 'candidate']
 
 class CompanySerializer(ModelSerializer):
     def to_representation(self, instance):
@@ -73,11 +73,11 @@ class JobDetailSerializer(JobSerializer):
 class ApplicationSerializer(ModelSerializer):
     class Meta:
         model = Application
-        fields = ['id', 'candidate_id', 'status', 'created_date', 'candidate']
+        fields = ['id', 'candidate_id', 'status', 'created_date']
 
 class ApplicationDetailSerializer(ApplicationSerializer):
-    job = JobSerializer()
+    candidate = UserSerializer()
 
     class Meta:
         model = ApplicationSerializer.Meta.model
-        fields = ApplicationSerializer.Meta.fields + ['resume_id', 'job']
+        fields = ApplicationSerializer.Meta.fields + ['resume_id', 'job', 'candidate']

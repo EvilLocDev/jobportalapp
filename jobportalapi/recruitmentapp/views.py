@@ -9,6 +9,7 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
     queryset = User.objects.filter(is_active = True)
     serializer_class = serializers.UserSerializer
     pagination_class = paginators.ItemPaginator
+    parser_classes = [parsers.MultiPartParser]
 
     def get_queryset(self):
         query = self.queryset
@@ -44,7 +45,6 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
 class ProfileViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
     queryset = Profile.objects.filter(active = True)
     serializer_class = serializers.ProfileSerializer
-    parser_classes = [parsers.MultiPartParser]
 
     def get_queryset(self):
         query = self.queryset
@@ -110,11 +110,11 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
     @action(methods=['get'], detail=True, url_path='applications')
     def get_applications(self, request, pk):
         applications = self.get_object().application_set.filter(active=True)
-        return Response(serializers.ApplicationSerializer(applications, many=True).data)
+        return Response(serializers.ApplicationDetailSerializer(applications, many=True).data)
 
 class ApplicationViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIView):
     # /applications/<id>
-    queryset = Application.objects.select_related('job').filter(active=True)
+    queryset = Application.objects.select_related('candidate').filter(active=True)
     serializer_class = serializers.ApplicationDetailSerializer
 
     def get_queryset(self):
