@@ -7,7 +7,10 @@ export const endpoints = {
     'resumes': (userId) => `/users/${userId}/resumes/`,
     'companies': '/companies/',
     'jobs': '/jobs/',
-    'applications': (jobId) => `/jobs/${jobId}/applications/`
+    'applications': (jobId) => `/jobs/${jobId}/applications/`,
+    'login': '/o/token/',
+    'register': '/users/',
+    'current-user': '/users/current-user/',
 };
 
 export default axios.create({
