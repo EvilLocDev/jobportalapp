@@ -105,3 +105,29 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
         sa.save()
 
         return Response(serializers.JobDetailSerializer(self.get_object(), context={'request': request}).data)
+
+    # /jobs/<id>/applications/
+    @action(methods=['get'], detail=True, url_path='applications')
+    def get_applications(self, request, pk):
+        applications = self.get_object().application_set.filter(active=True)
+        return Response(serializers.ApplicationSerializer(applications, many=True).data)
+
+class ApplicationViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIView):
+    # /applications/<id>
+    queryset = Application.objects.select_related('job').filter(active=True)
+    serializer_class = serializers.ApplicationDetailSerializer
+
+    def get_queryset(self):
+        query = self.queryset
+
+        # /applications/?q=<keyword>
+        q = self.request.query_params.get('q')
+        if q:
+            query = query.filter(status__icontains=q)
+
+        # /applications/?job_id=<id>
+        job_id = self.request.query_params.get('job_id')
+        if job_id:
+            query = query.filter(job_id=job_id)
+
+        return query

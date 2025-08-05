@@ -8,6 +8,7 @@ router.register('profiles', views.ProfileViewSet, basename='profile')
 router.register('resumes', views.ResumeViewSet, basename='resume')
 router.register('companies', views.CompanyViewSet, basename='company')
 router.register('jobs', views.JobViewSet, basename='job')
+router.register('applications', views.ApplicationViewSet, basename='application')
 
 urlpatterns = [
     path('', include(router.urls)),

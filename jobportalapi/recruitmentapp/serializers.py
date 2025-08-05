@@ -4,7 +4,7 @@ from .models import User, Profile, Resume, Company, Job, Application
 class UserSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'password', 'first_name', 'last_name', 'email']
+        fields = ['username', 'password', 'first_name', 'last_name', 'email', 'profile']
         extra_kwargs = {
             'password': {
                 'write_only': True
@@ -69,3 +69,15 @@ class JobDetailSerializer(JobSerializer):
     class Meta:
         model = JobSerializer.Meta.model
         fields = JobSerializer.Meta.fields + ['description', 'location', 'company', 'saved_job']
+
+class ApplicationSerializer(ModelSerializer):
+    class Meta:
+        model = Application
+        fields = ['id', 'candidate_id', 'status', 'created_date', 'candidate']
+
+class ApplicationDetailSerializer(ApplicationSerializer):
+    job = JobSerializer()
+
+    class Meta:
+        model = ApplicationSerializer.Meta.model
+        fields = ApplicationSerializer.Meta.fields + ['resume_id', 'job']

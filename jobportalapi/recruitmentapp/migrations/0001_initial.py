@@ -113,7 +113,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='Application',
+            name='Applications',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('active', models.BooleanField(default=True)),
