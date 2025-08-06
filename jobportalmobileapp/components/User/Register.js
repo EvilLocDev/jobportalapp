@@ -35,7 +35,7 @@ const Register = () => {
     }, {
         label: 'Email',
         field: 'email',
-        icon: 'e',
+        icon: 'email',
         secureTextEntry: true
     }];
 
