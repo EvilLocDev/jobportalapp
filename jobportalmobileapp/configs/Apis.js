@@ -13,6 +13,15 @@ export const endpoints = {
     'current-user': '/users/current-user/',
 };
 
+export const authApis = (token) => {
+    return axios.create({
+        baseURL: BASE_URL,
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+}
+
 export default axios.create({
     baseURL: BASE_URL
 });
