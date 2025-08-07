@@ -10,6 +10,7 @@ import Profile from "./components/User/Profile";
 import {useContext, useReducer} from "react";
 import {MyDispatchContext, MyUserContext} from "./configs/Contexts";
 import MyUserReducer from "./reducers/MyUserReducer";
+import ApplicationDetails from "./components/Home/ApplicationDetails";
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,7 @@ const StackNavigator = () => {
         <Stack.Navigator>
             <Stack.Screen name="home" component={Home} options={{title: "Company list"}}/>
             <Stack.Screen name="applications" component={Applications} options={{title: "Applications list"}}/>
+            <Stack.Screen name="application-details" component={ApplicationDetails} options={{title:"Application detail"}}/>
         </Stack.Navigator>
     );
 }
@@ -42,7 +44,7 @@ const TabNavigator = () => {
                     tabBarIcon: () => <Icon size={30} source="account-plus-outline"/>
                 }}/>
             </> : <>
-                <Tab.Screen name="login" component={Profile}
+                <Tab.Screen name="profile" component={Profile}
                             options={{title: "Account", tabBarIcon: () => <Icon size={30} source="account"/>}}/>
             </>}
 
