@@ -21,7 +21,7 @@ const Profile = () => {
     return (
         <View>
             <Text style={MyStyles.subject}>Hello {user?.first_name} {user.last_name}!</Text>
-            <Button onPress={logout} mode="contained">Logout</Button>
+            <Button onPress={logout} mode="contained" style={MyStyles.m}>Logout</Button>
         </View>
     );
 }
