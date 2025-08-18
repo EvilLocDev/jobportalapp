@@ -30,6 +30,13 @@ class ProfileSerializer(ModelSerializer):
         model = Profile
         fields = ['phone_number', 'address', 'user_type']
 
+class UserDetailSerializer(UserSerializer):
+    profile = ProfileSerializer()
+
+    class Meta:
+        model = UserSerializer.Meta.model
+        fields = UserSerializer.Meta.fields + ['profile']
+
 class ResumeSerializer(ModelSerializer):
     class Meta:
         model = Resume

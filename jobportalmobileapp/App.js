@@ -1,6 +1,9 @@
-import {useContext, useEffect, useReducer} from "react";
-import {MyDispatchContext, MyUserContext} from "./configs/Contexts";
+import {useContext, useReducer} from "react";
+
+import {MyDispatchContext, MyUserContext, SavedJobsContext, SavedJobsDispatchContext} from "./configs/Contexts";
 import MyUserReducer from "./reducers/MyUserReducer";
+import SavedJobsReducer from "./reducers/SavedJobsReducer";
+
 import Home from "./components/Home/Home";
 import Login from "./components/User/Login";
 import Register from "./components/User/Register";
@@ -9,7 +12,9 @@ import JobDetails from "./components/Job/JobDetails";
 import Applications from "./components/Home/Applications"
 import ApplicationDetails from "./components/Home/ApplicationDetails";
 import SaveJobs from "./components/User/SaveJobs";
+
 import "./styles/globals.css"
+
 import {Icon} from "react-native-paper";
 import {NavigationContainer} from "@react-navigation/native";
 import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
@@ -59,13 +64,20 @@ const TabNavigator = () => {
 
 const App = () => {
     const [user, dispatch] = useReducer(MyUserReducer, null);
+    const [savedJobs, savedJobsDispatch] = useReducer(SavedJobsReducer, []);
     
     return (
         <MyUserContext.Provider value={user}>
             <MyDispatchContext.Provider value={dispatch}>
-                <NavigationContainer>
-                    <TabNavigator/>
-                </NavigationContainer>
+
+                <SavedJobsContext.Provider value={savedJobs}>
+                    <SavedJobsDispatchContext.Provider value={savedJobsDispatch}>
+                        <NavigationContainer>
+                            <TabNavigator/>
+                        </NavigationContainer>
+                    </SavedJobsDispatchContext.Provider>
+                </SavedJobsContext.Provider>
+
             </MyDispatchContext.Provider>
         </MyUserContext.Provider>
     );

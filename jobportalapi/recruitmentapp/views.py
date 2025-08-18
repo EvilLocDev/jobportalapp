@@ -6,8 +6,8 @@ from rest_framework import viewsets, generics, parsers, permissions
 from .models import User, Profile, Resume, Company, Job, SaveJob, Application
 
 class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
-    queryset = User.objects.filter(is_active = True)
-    serializer_class = serializers.UserSerializer
+    queryset = User.objects.select_related('profile').filter(profile__active=True)
+    serializer_class = serializers.UserDetailSerializer
     pagination_class = paginators.ItemPaginator
     parser_classes = [parsers.MultiPartParser]
 
@@ -40,7 +40,7 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
 
             u.save()
 
-        return Response(serializers.UserSerializer(u).data)
+        return Response(serializers.UserDetailSerializer(u).data)
 
     # /users/saved-jobs/
     @action(methods=['get'], detail=False, url_path='saved-jobs', permission_classes=[permissions.IsAuthenticated])

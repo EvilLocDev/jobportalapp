@@ -23,7 +23,7 @@ export const authApis = (token) => {
         headers: {
             'Authorization': `Bearer ${token}`
         }
-    })
+    });
 }
 
 export default axios.create({
