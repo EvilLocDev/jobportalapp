@@ -1,17 +1,20 @@
 import axios from "axios";
 
-const BASE_URL = 'http://192.168.118.218:8000/';
+const BASE_URL = 'http://192.168.100.222:8000/';
 
 export const endpoints = {
     'profiles': '/profiles/',
     'resumes': (userId) => `/users/${userId}/resumes/`,
     'companies': '/companies/',
     'jobs': '/jobs/',
+    'job-details': (jobId) => `/jobs/${jobId}/`,
     'applications': (jobId) => `/jobs/${jobId}/applications/`,
     'login': '/o/token/',
     'register': '/users/',
     'current-user': '/users/current-user/',
-    'application-details': (applicationId) => `/applications/${applicationId}`
+    'application-details': (applicationId) => `/applications/${applicationId}`,
+    'save-job': (jobId) => `/jobs/${jobId}/save-job/`,
+    'saved-jobs': '/users/saved-jobs/',
 };
 
 export const authApis = (token) => {
@@ -20,7 +23,7 @@ export const authApis = (token) => {
         headers: {
             'Authorization': `Bearer ${token}`
         }
-    })
+    });
 }
 
 export default axios.create({

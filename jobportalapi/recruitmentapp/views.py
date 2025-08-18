@@ -6,8 +6,8 @@ from rest_framework import viewsets, generics, parsers, permissions
 from .models import User, Profile, Resume, Company, Job, SaveJob, Application
 
 class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
-    queryset = User.objects.filter(is_active = True)
-    serializer_class = serializers.UserSerializer
+    queryset = User.objects.select_related('profile').filter(profile__active=True)
+    serializer_class = serializers.UserDetailSerializer
     pagination_class = paginators.ItemPaginator
     parser_classes = [parsers.MultiPartParser]
 
@@ -40,7 +40,14 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
 
             u.save()
 
-        return Response(serializers.UserSerializer(u).data)
+        return Response(serializers.UserDetailSerializer(u).data)
+
+    # /users/saved-jobs/
+    @action(methods=['get'], detail=False, url_path='saved-jobs', permission_classes=[permissions.IsAuthenticated])
+    def get_save_jobs(self, request):
+        u = request.user
+        jobs = u.savejob_set.filter(active=True)
+        return Response(serializers.SaveJobSerializer(jobs, many=True).data)
 
 class ProfileViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
     queryset = Profile.objects.filter(active = True)
@@ -99,7 +106,7 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
     # /jobs/{id}/save-job/
     @action(methods=['post'], detail=True, url_path='save-job', permission_classes=[permissions.IsAuthenticated])
     def save_job(self, request, pk):
-        sa, created = SaveJob.objects.get_or_create(user=request.user, Job_id=pk)
+        sa, created = SaveJob.objects.get_or_create(user=request.user, job_id=pk)
         if not created:
             sa.active = not sa.active
         sa.save()

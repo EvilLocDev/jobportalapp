@@ -1,0 +1,120 @@
+import { StyleSheet } from "react-native";
+
+export default StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+    },
+    scrollView: {
+        flex: 1,
+        padding: 16,
+    },
+    card: {
+        marginBottom: 16,
+        borderRadius: 12,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        backgroundColor: '#ffffff',
+    },
+    cardCover: {
+        height: 200,
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+    },
+    logoContainer: {
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: '#f8f9fa',
+    },
+    companyLogo: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        borderWidth: 2,
+        borderColor: '#e9ecef',
+    },
+    cardContent: {
+        padding: 20,
+    },
+    jobTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#2c3e50',
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    jobLocation: {
+        fontSize: 16,
+        color: '#6c757d',
+        marginBottom: 8,
+        textAlign: 'center',
+        fontStyle: 'italic',
+    },
+    jobSalary: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#28a745',
+        marginBottom: 16,
+        textAlign: 'center',
+        backgroundColor: '#d4edda',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        alignSelf: 'center',
+    },
+    descriptionContainer: {
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#e9ecef',
+    },
+    descriptionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#495057',
+        marginBottom: 12,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    companyInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+        paddingHorizontal: 20,
+    },
+    companyName: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#495057',
+        marginLeft: 12,
+    },
+    tagsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: 12,
+        justifyContent: 'center',
+    },
+    tag: {
+        backgroundColor: '#007bff',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        marginHorizontal: 4,
+        marginVertical: 2,
+    },
+    tagText: {
+        color: '#ffffff',
+        fontSize: 12,
+        fontWeight: '500',
+    },
+});

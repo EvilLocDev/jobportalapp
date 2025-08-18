@@ -88,8 +88,8 @@ class Application(BaseModel):
         ordering = ['-id',]
 
 class SaveJob(BaseModel):
-    Job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('user', 'Job') # Use active field to save the job & each user just save only one time
+        unique_together = ('user', 'job') # Use active field to save the job & each user just save only one time

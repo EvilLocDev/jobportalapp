@@ -6,7 +6,7 @@ import { useContext, useState } from "react";
 import Apis, { authApis, endpoints } from "../../configs/Apis";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MyDispatchContext } from "../../configs/Contexts";
+import { MyDispatchContext, SavedJobsDispatchContext } from "../../configs/Contexts";
 
 const Login = () => {
     const info = [{
@@ -26,6 +26,7 @@ const Login = () => {
     const [msg, setMsg] = useState();
     const nav = useNavigation();
     const dispatch = useContext(MyDispatchContext);
+    const savedJobsDispatch = useContext(SavedJobsDispatchContext); // Lấy dispatch cho saved jobs
 
     const setState = (value, field) => {
         setUser({...user, [field]: value})
@@ -59,13 +60,27 @@ const Login = () => {
                     client_secret: 'zYhQTkGW40tppegfft68eQ6hQXx2RyH0D7FyAx5a9oMapzGDiunwb6SuCSmnYwz1pbYzneRgeu8XqKVwS2jmthfAv5kLuobFqZYCTatx2NuqzYbJyyr0Tw4avMBEZMbs',
                     grant_type: 'password'
                 });
+
+                const accessToken = res.data.access_token;
                 await AsyncStorage.setItem('token', res.data.access_token);
 
                 let u = await authApis(res.data.access_token).get(endpoints['current-user']);
 
+                const finalUserObject = {
+                    ...u.data,
+                    "access_token": accessToken
+                };
+
                 dispatch({
                     "type": "login",
-                    "payload": u.data
+                    "payload": finalUserObject
+                });
+
+                const savedJobsRes = await authApis(accessToken).get(endpoints['saved-jobs']);
+                const jobs = savedJobsRes.data.map(sj => sj.job);
+                savedJobsDispatch({
+                    type: "set",
+                    payload: jobs
                 });
 
             } catch (ex) {

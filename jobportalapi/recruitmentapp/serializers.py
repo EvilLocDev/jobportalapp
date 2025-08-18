@@ -1,5 +1,6 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
-from .models import User, Profile, Resume, Company, Job, Application
+from .models import User, Profile, Resume, Company, Job, Application, SaveJob
+
 
 class UserSerializer(ModelSerializer):
     def to_representation(self, instance):
@@ -28,6 +29,13 @@ class ProfileSerializer(ModelSerializer):
     class Meta:
         model = Profile
         fields = ['phone_number', 'address', 'user_type']
+
+class UserDetailSerializer(UserSerializer):
+    profile = ProfileSerializer()
+
+    class Meta:
+        model = UserSerializer.Meta.model
+        fields = UserSerializer.Meta.fields + ['profile']
 
 class ResumeSerializer(ModelSerializer):
     class Meta:
@@ -58,9 +66,9 @@ class JobSerializer(ModelSerializer):
 
 class JobDetailSerializer(JobSerializer):
     company = CompanySerializer()
-    saved_job = SerializerMethodField()
+    is_saved = SerializerMethodField()
 
-    def get_saved_job(self, job):
+    def get_is_saved(self, job):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return job.savejob_set.filter(user=request.user, active=True).exists()
@@ -68,7 +76,7 @@ class JobDetailSerializer(JobSerializer):
 
     class Meta:
         model = JobSerializer.Meta.model
-        fields = JobSerializer.Meta.fields + ['description', 'location', 'company', 'saved_job']
+        fields = JobSerializer.Meta.fields + ['description', 'location', 'company', 'is_saved']
 
 class ApplicationSerializer(ModelSerializer):
     class Meta:
@@ -81,3 +89,10 @@ class ApplicationDetailSerializer(ApplicationSerializer):
     class Meta:
         model = ApplicationSerializer.Meta.model
         fields = ApplicationSerializer.Meta.fields + ['resume_id', 'job', 'candidate']
+
+class SaveJobSerializer(ModelSerializer):
+    job = JobSerializer()
+
+    class Meta:
+        model = SaveJob
+        fields = ['id', 'job', 'created_date']
