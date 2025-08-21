@@ -22,6 +22,30 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
 
         return query
 
+    # /users/change-password/
+    @action(
+        methods=['post'],
+        detail=False,
+        url_path='change-password',
+        permission_classes=[permissions.IsAuthenticated],
+        parser_classes=[parsers.JSONParser]
+    )
+    def change_password(self, request):
+        user = request.user
+        serializer = serializers.ChangePasswordSerializer(data=request.data)
+
+        if serializer.is_valid():
+            # Kiểm tra mật khẩu cũ
+            if not user.check_password(serializer.validated_data['old_password']):
+                return Response({"old_password": ["Mật khẩu cũ không đúng."]}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Đặt mật khẩu mới
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({"status": "Mật khẩu đã được thay đổi thành công."}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     # /users/<id>/resumes/
     @action(methods=['get'], detail=True, url_path='resumes')
     def get_resumes(self, request, pk):
@@ -33,24 +57,12 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
     def get_current_user(self, request):
         u = request.user
         if request.method == 'PATCH':
-            # Dùng serializer để an toàn và có validation
-            serializer = serializers.UserSerializer(u, data=request.data, partial=True)
+            # Sử dụng UserDetailSerializer để có thể cập nhật cả profile
+            serializer = serializers.UserDetailSerializer(u, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
-            serializer.save()  # .save() sẽ tự gọi .update() của serializer
+            serializer.save()
 
         return Response(serializers.UserDetailSerializer(u).data)
-
-        # u = request.user
-        # if request.method.__eq__('PATCH'):
-        #     for k, v in request.data.items():
-        #         if k in ['first_name', 'last_name']:
-        #             setattr(u, k, v)
-        #         elif k.__eq__('password'):
-        #             u.set_password(v)
-        #
-        #     u.save()
-        #
-        # return Response(serializers.UserDetailSerializer(u).data)
 
     # /users/saved-jobs/
     @action(methods=['get'], detail=False, url_path='saved-jobs', permission_classes=[permissions.IsAuthenticated])

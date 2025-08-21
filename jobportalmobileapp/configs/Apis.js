@@ -8,10 +8,12 @@ export const endpoints = {
     'companies': '/companies/',
     'jobs': '/jobs/',
     'job-details': (jobId) => `/jobs/${jobId}/`,
-    
+
     'login': '/o/token/',
     'register': '/users/',
     'current-user': '/users/current-user/',
+    'change-password': '/users/change-password/',
+
     'application-details': (applicationId) => `/applications/${applicationId}`,
     'save-job': (jobId) => `/jobs/${jobId}/save-job/`,
     'saved-jobs': '/users/saved-jobs/',

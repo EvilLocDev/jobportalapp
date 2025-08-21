@@ -9,8 +9,8 @@ import Home from "./components/Home/Home";
 import Login from "./components/User/Login";
 import Register from "./components/User/Register";
 import Profile from "./components/User/Profile";
+import ChangePassword from "./components/User/ChangePassword";
 import JobDetails from "./components/Job/JobDetails";
-import ApplyJob from "./components/Application/ApplyJob";
 import SaveJobs from "./components/User/SaveJobs";
 
 import "./styles/globals.css"
@@ -22,6 +22,16 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const ProfileStack = createNativeStackNavigator();
+
+const ProfileStackNavigator = () => {
+    return (
+        <ProfileStack.Navigator>
+            <ProfileStack.Screen name="ProfileInfo" component={Profile} options={{ title: "Thông tin cá nhân" }} />
+            <ProfileStack.Screen name="ChangePassword" component={ChangePassword} options={{ title: "Đổi mật khẩu" }} />
+        </ProfileStack.Navigator>
+    );
+}
 
 const StackNavigator = () => {
     return (
@@ -29,8 +39,8 @@ const StackNavigator = () => {
             <Stack.Screen name="home" component={Home} options={{ title: "Danh sách công ty" }} />
             <Stack.Screen name="job-details" component={JobDetails} options={{ title: "Chi tiết công việc" }} />
         </Stack.Navigator>
-    );
-}
+    )
+};
 
 const TabNavigator = () => {
     const user = useContext(MyUserContext);
@@ -48,8 +58,15 @@ const TabNavigator = () => {
                 <Tab.Screen name="register" component={Register}
                     options={{ title: 'Đăng ký', tabBarIcon: () => <Icon size={30} source="account-plus-outline" /> }} />
             </> : <>
-                <Tab.Screen name="profile" component={Profile}
-                    options={{ title: "Tài khoản", tabBarIcon: () => <Icon size={30} source="account" /> }} />
+                <Tab.Screen 
+                    name="profile" 
+                    component={ProfileStackNavigator}
+                    options={{ 
+                        headerShown: false,
+                        title: "Tài khoản", 
+                        tabBarIcon: () => <Icon size={30} source="account" /> 
+                    }} 
+                />
                 <Tab.Screen name="save-job-list" component={SaveJobs}
                     options={{ title: "Việc đã lưu", tabBarIcon: () => <Icon size={30} source="folder" /> }} />
             </>}

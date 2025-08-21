@@ -1,3 +1,4 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from .models import User, Profile, Resume, Company, Job, Application, SaveJob
@@ -25,6 +26,20 @@ class UserSerializer(ModelSerializer):
 
         return u
 
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True)
+    confirm_new_password = serializers.CharField(required=True, write_only=True)
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_new_password']:
+            raise serializers.ValidationError("Mật khẩu mới không khớp.")
+        return data
+
 class ProfileSerializer(ModelSerializer):
     class Meta:
         model = Profile
@@ -37,19 +52,31 @@ class UserDetailSerializer(UserSerializer):
         model = UserSerializer.Meta.model
         fields = UserSerializer.Meta.fields + ['profile']
 
-    # def create(self, validated_data):
-    #     profile_data = validated_data.pop('profile')
-    #     user_data = validated_data
-    #
-    #     # Tạo User trước
-    #     u = User(**user_data)
-    #     u.set_password(u.password)
-    #     u.save()
-    #
-    #     # Tạo Profile sau
-    #     Profile.objects.create(user=u, **profile_data)
-    #
-    #     return u
+    def create(self, validated_data):
+        # Tách dữ liệu của profile ra khỏi validated_data
+        profile_data = validated_data.pop('profile')
+
+        # Dùng lại logic create của UserSerializer cha
+        user = super().create(validated_data)
+
+        Profile.objects.create(user=user, **profile_data)
+
+        return user
+
+    def update(self, instance, validated_data):
+        # Dữ liệu 'profile' trong request không
+        profile_data = validated_data.pop('profile', None)
+
+        # Cập nhật các trường của User (dùng lại logic của serializer cha)
+        user_instance = super().update(instance, validated_data)
+
+        if profile_data:
+            profile_instance = user_instance.profile
+            for attr, value in profile_data.items():
+                setattr(profile_instance, attr, value)
+            profile_instance.save()
+
+        return user_instance
 
 class ResumeSerializer(ModelSerializer):
     class Meta:

@@ -4,3 +4,6 @@ from django.apps import AppConfig
 class RecruitmentappConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'recruitmentapp'
+
+    def ready(self):
+        from . import signals
