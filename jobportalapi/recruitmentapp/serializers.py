@@ -1,6 +1,7 @@
+from django.contrib.auth.password_validation import validate_password
+from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from .models import User, Profile, Resume, Company, Job, Application, SaveJob
-
 
 class UserSerializer(ModelSerializer):
     def to_representation(self, instance):
@@ -10,7 +11,7 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'password', 'first_name', 'last_name', 'avatar', 'email']
+        fields = [ 'id', 'username', 'password', 'first_name', 'last_name', 'avatar', 'email']
         extra_kwargs = {
             'password': {
                 'write_only': True
@@ -25,6 +26,20 @@ class UserSerializer(ModelSerializer):
 
         return u
 
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True)
+    confirm_new_password = serializers.CharField(required=True, write_only=True)
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_new_password']:
+            raise serializers.ValidationError("Mật khẩu mới không khớp.")
+        return data
+
 class ProfileSerializer(ModelSerializer):
     class Meta:
         model = Profile
@@ -37,17 +52,36 @@ class UserDetailSerializer(UserSerializer):
         model = UserSerializer.Meta.model
         fields = UserSerializer.Meta.fields + ['profile']
 
+    def create(self, validated_data):
+        # Tách dữ liệu của profile ra khỏi validated_data
+        profile_data = validated_data.pop('profile')
+
+        # Dùng lại logic create của UserSerializer cha
+        user = super().create(validated_data)
+
+        Profile.objects.create(user=user, **profile_data)
+
+        return user
+
+    def update(self, instance, validated_data):
+        # Dữ liệu 'profile' trong request không
+        profile_data = validated_data.pop('profile', None)
+
+        # Cập nhật các trường của User (dùng lại logic của serializer cha)
+        user_instance = super().update(instance, validated_data)
+
+        if profile_data:
+            profile_instance = user_instance.profile
+            for attr, value in profile_data.items():
+                setattr(profile_instance, attr, value)
+            profile_instance.save()
+
+        return user_instance
+
 class ResumeSerializer(ModelSerializer):
     class Meta:
         model = Resume
-        fields = ['id', 'candidate_id', 'title', 'created_date', 'is_default']
-
-class ResumeDetailSerializer(ResumeSerializer):
-    candidate = UserSerializer()
-
-    class Meta:
-        model = ResumeSerializer.Meta.model
-        fields = ResumeSerializer.Meta.fields + ['file', 'candidate']
+        fields = ['id','candidate_id', 'title', 'file', 'created_date', 'is_default']
 
 class CompanySerializer(ModelSerializer):
     def to_representation(self, instance):
@@ -78,17 +112,21 @@ class JobDetailSerializer(JobSerializer):
         model = JobSerializer.Meta.model
         fields = JobSerializer.Meta.fields + ['description', 'location', 'company', 'is_saved']
 
+
 class ApplicationSerializer(ModelSerializer):
     class Meta:
         model = Application
-        fields = ['id', 'candidate_id', 'status', 'created_date']
+        fields = ['id', 'resume', 'status', 'created_date', 'candidate', 'job']
+        read_only_fields = ['candidate', 'job', 'status']
 
-class ApplicationDetailSerializer(ApplicationSerializer):
-    candidate = UserSerializer()
+    def validate_resume(self, resume):
+        request = self.context.get('request')
+        if not request or not hasattr(request, 'user'):
+            return resume
 
-    class Meta:
-        model = ApplicationSerializer.Meta.model
-        fields = ApplicationSerializer.Meta.fields + ['resume_id', 'job', 'candidate']
+        if resume.candidate != request.user:
+            raise serializers.ValidationError("Bạn không thể sử dụng CV này.")
+        return resume
 
 class SaveJobSerializer(ModelSerializer):
     job = JobSerializer()

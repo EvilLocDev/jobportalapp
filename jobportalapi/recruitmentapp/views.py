@@ -1,8 +1,9 @@
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from . import perms
 from . import serializers, paginators
-from rest_framework import viewsets, generics, parsers, permissions
+from rest_framework import viewsets, generics, parsers, permissions, status
 from .models import User, Profile, Resume, Company, Job, SaveJob, Application
 
 class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
@@ -21,6 +22,30 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
 
         return query
 
+    # /users/change-password/
+    @action(
+        methods=['post'],
+        detail=False,
+        url_path='change-password',
+        permission_classes=[permissions.IsAuthenticated],
+        parser_classes=[parsers.JSONParser]
+    )
+    def change_password(self, request):
+        user = request.user
+        serializer = serializers.ChangePasswordSerializer(data=request.data)
+
+        if serializer.is_valid():
+            # Kiểm tra mật khẩu cũ
+            if not user.check_password(serializer.validated_data['old_password']):
+                return Response({"old_password": ["Mật khẩu cũ không đúng."]}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Đặt mật khẩu mới
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({"status": "Mật khẩu đã được thay đổi thành công."}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     # /users/<id>/resumes/
     @action(methods=['get'], detail=True, url_path='resumes')
     def get_resumes(self, request, pk):
@@ -31,14 +56,11 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
     @action(methods=['get', 'patch'], url_path='current-user', detail=False, permission_classes=[permissions.IsAuthenticated])
     def get_current_user(self, request):
         u = request.user
-        if request.method.__eq__('PATCH'):
-            for k, v in request.data.items():
-                if k in ['first_name', 'last_name']:
-                    setattr(u, k, v)
-                elif k.__eq__('password'):
-                    u.set_password(v)
-
-            u.save()
+        if request.method == 'PATCH':
+            # Sử dụng UserDetailSerializer để có thể cập nhật cả profile
+            serializer = serializers.UserDetailSerializer(u, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
 
         return Response(serializers.UserDetailSerializer(u).data)
 
@@ -68,9 +90,10 @@ class ProfileViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIV
 
         return query
 
-class ResumeViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
-    queryset = Resume.objects.prefetch_related('candidate').filter(active=True)
-    serializer_class = serializers.ResumeDetailSerializer
+class ResumeViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.UpdateAPIView):
+    queryset = Resume.objects.filter(active = True)
+    serializer_class = serializers.ResumeSerializer
+    permission_classes = [perms.IsResumeOwner]
 
 class CompanyViewSet(viewsets.ViewSet, generics.ListAPIView):
     queryset = Company.objects.filter(active=True)
@@ -88,6 +111,18 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
     serializer_class = serializers.JobDetailSerializer
     pagination_class = paginators.ItemPaginator
 
+    def get_permissions(self):
+        if self.action == 'applications_action':
+            if self.request.method == 'POST':
+                return [perms.IsCandidate()]
+            elif self.request.method == 'GET':
+                return [perms.IsJobOwner()]
+
+        elif self.action == 'save_job':
+            return [perms.IsCandidate()]
+
+        return [permissions.AllowAny()]
+
     def get_queryset(self):
         query = self.queryset
 
@@ -104,7 +139,7 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
         return query
 
     # /jobs/{id}/save-job/
-    @action(methods=['post'], detail=True, url_path='save-job', permission_classes=[permissions.IsAuthenticated])
+    @action(methods=['post'], detail=True, url_path='save-job', permission_classes=[perms.IsCandidate])
     def save_job(self, request, pk):
         sa, created = SaveJob.objects.get_or_create(user=request.user, job_id=pk)
         if not created:
@@ -114,15 +149,29 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
         return Response(serializers.JobDetailSerializer(self.get_object(), context={'request': request}).data)
 
     # /jobs/<id>/applications/
-    @action(methods=['get'], detail=True, url_path='applications')
-    def get_applications(self, request, pk):
-        applications = self.get_object().application_set.filter(active=True)
-        return Response(serializers.ApplicationDetailSerializer(applications, many=True).data)
+    @action(methods=['get', 'post'], detail=True, url_path='applications')
+    def applications_action(self, request, pk):
+        job = self.get_object()
+
+        if request.method == 'POST':
+            # Kiểm tra trước để tránh truy vấn DB không cần thiết
+            if Application.objects.filter(job=job, candidate=request.user).exists():
+                return Response({'detail': 'Bạn đã ứng tuyển công việc này rồi.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Truyền context vào serializer
+            serializer = serializers.ApplicationSerializer(data=request.data, context={'request': request, 'job': job})
+            if serializer.is_valid(raise_exception=True):
+                serializer.save(candidate=request.user, job=job)  # Truyền các giá trị read-only vào hàm save
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:  # GET request
+            applications = job.application_set.filter(active=True)
+            return Response(serializers.ApplicationSerializer(applications, many=True).data)
 
 class ApplicationViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIView):
     # /applications/<id>
     queryset = Application.objects.select_related('candidate').filter(active=True)
-    serializer_class = serializers.ApplicationDetailSerializer
+    serializer_class = serializers.ApplicationSerializer
 
     def get_queryset(self):
         query = self.queryset
@@ -138,3 +187,23 @@ class ApplicationViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.Li
             query = query.filter(job_id=job_id)
 
         return query
+
+    # trong ApplicationViewSet
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     queryset = super().get_queryset()
+    #
+    #     if not user.is_authenticated:
+    #         return Application.objects.none()  # Không trả về gì nếu chưa đăng nhập
+    #
+    #     profile = getattr(user, 'profile', None)
+    #     if profile and profile.user_type == 'candidate':
+    #         # Ứng viên chỉ thấy application của mình
+    #         return queryset.filter(candidate=user)
+    #     elif profile and profile.user_type == 'employer':
+    #         # Nhà tuyển dụng chỉ thấy application cho các job của công ty mình
+    #         return queryset.filter(job__company__user=user)
+    #     elif user.is_staff:
+    #         return queryset  # Admin thấy tất cả
+    #
+    #     return Application.objects.none()  # Mặc định không trả về gì

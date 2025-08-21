@@ -1,13 +1,15 @@
 import { useEffect, useState, useContext } from "react";
 import { ScrollView, ActivityIndicator, useWindowDimensions, View, Image, Alert } from "react-native";
-import { Card, Text, IconButton } from "react-native-paper";
+import { Card, Text, IconButton, Button } from "react-native-paper";
 import RenderHTML from "react-native-render-html";
 import Apis, { authApis, endpoints } from "../../configs/Apis";
 import Styles from "./Styles";
 import { MyUserContext, SavedJobsContext, SavedJobsDispatchContext } from "../../configs/Contexts";
+import ApplyJob from "../Application/ApplyJob";
 
-const JobDetails = ({route}) => {
+const JobDetails = ({ route }) => {
     const [job, setJob] = useState(null);
+    const [isApplyModalVisible, setApplyModalVisible] = useState(false);
     const jobId = route.params?.jobId;
     const { width } = useWindowDimensions();
 
@@ -18,7 +20,7 @@ const JobDetails = ({route}) => {
 
     const loadJobDetails = async () => {
         try {
-            // Nếu user đã đăng nhập, dùng authApis để lấy trạng thái is_saved
+            console.log("Loading job details for jobId:", jobId);
             let api = Apis;
             if (user && user.access_token) {
                 api = authApis(user.access_token);
@@ -38,36 +40,30 @@ const JobDetails = ({route}) => {
 
     // Hàm xử lý lưu/bỏ lưu công việc
     const handleSaveJob = async () => {
-        console.log("Handling save job for jobId:", user);
-        if (!user) {
-            Alert.alert("Thông báo", "Bạn cần đăng nhập để thực hiện chức năng này.");
-            return;
-        }
-
         try {
             const api = authApis(user.access_token);
-            await api.post(endpoints['save-job'](jobId));
-            
-            // Kiểm tra xem công việc đã được lưu trước đó chưa
-            const isCurrentlySaved = savedJobs.some(savedJob => savedJob.id === job.id);
-            
-            if (isCurrentlySaved) {
-                // Nếu đã lưu -> thực hiện bỏ lưu
-                savedJobsDispatch({ type: "remove", payload: job });
-                Alert.alert("Successful", "Unsave successful!");
+            const res = await api.post(endpoints['save-job'](jobId));
+            const updatedJob = res.data;
+
+            setJob(updatedJob);
+
+            if (updatedJob.is_saved) {
+                // có cấu trúc giống như SaveJobSerializer.
+                const newSavedJobEntry = {
+                    id: updatedJob.id,
+                    job: updatedJob
+                };
+                savedJobsDispatch({ type: "add", payload: newSavedJobEntry });
+                Alert.alert("Thành công", "Đã lưu công việc!");
             } else {
-                // Nếu chưa lưu -> thực hiện lưu
-                savedJobsDispatch({ type: "add", payload: job });
-                Alert.alert("Successful", "Save successful!");
+                savedJobsDispatch({ type: "remove", payload: updatedJob });
+                Alert.alert("Thành công", "Đã bỏ lưu công việc!");
             }
         } catch (ex) {
             console.error("Failed to save job:", ex);
-            Alert.alert("Error", "An error occurred. Please try again.");
+            Alert.alert("Lỗi", "Đã có lỗi xảy ra. Vui lòng thử lại.");
         }
     };
-
-    // Xác định trạng thái đã lưu hay chưa từ global state
-    const isSaved = job ? savedJobs.some(savedJob => savedJob.id === job.id) : false;
 
     if (job === null) {
         return (
@@ -82,14 +78,14 @@ const JobDetails = ({route}) => {
         <View style={Styles.container}>
             <ScrollView style={Styles.scrollView} showsVerticalScrollIndicator={false}>
                 <Card style={Styles.card}>
-                    <Card.Cover 
-                        source={{ uri: job.company?.logo || 'https://via.placeholder.com/400x200?text=Company+Logo' }} 
+                    <Card.Cover
+                        source={{ uri: job.company?.logo || 'https://via.placeholder.com/400x200?text=Company+Logo' }}
                         style={Styles.cardCover}
                     />
-                    
+
                     <View style={Styles.logoContainer}>
-                        <Image 
-                            source={{ uri: job.company?.logo || 'https://via.placeholder.com/80x80?text=Logo' }} 
+                        <Image
+                            source={{ uri: job.company?.logo || 'https://via.placeholder.com/80x80?text=Logo' }}
                             style={Styles.companyLogo}
                         />
                     </View>
@@ -97,41 +93,66 @@ const JobDetails = ({route}) => {
                     <Card.Content style={Styles.cardContent}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Text style={[Styles.jobTitle, { flex: 1 }]}>{job.title}</Text>
-                            {/* Nút lưu chỉ hiển thị cho ứng viên đã đăng nhập */}
+
                             {user && user.profile.user_type === 'candidate' && (
-                                <IconButton
-                                    icon={isSaved ? "bookmark" : "bookmark-outline"}
-                                    iconColor={isSaved ? "#007bff" : "#6c757d"}
-                                    size={30}
-                                    onPress={handleSaveJob}
+                                // Bọc cả hai nút trong một thẻ chung (React Fragment)
+                                <>
+                                    <IconButton
+                                        icon={job?.is_saved ? "bookmark" : "bookmark-outline"}
+                                        iconColor={job?.is_saved ? "#007bff" : "#6c757d"}
+                                        size={30}
+                                        onPress={handleSaveJob}
+                                    />
+
+                                    <View style={{ padding: 10 }}>
+                                        <Button
+                                            icon="send"
+                                            mode="contained"
+                                            onPress={() => setApplyModalVisible(true)}
+                                            style={{ backgroundColor: '#007bff' }}
+                                        >
+                                            Apply Now
+                                        </Button>
+                                    </View>
+                                </>
+                            )}
+
+                            {job && (
+                                <ApplyJob
+                                    visible={isApplyModalVisible}
+                                    onClose={() => setApplyModalVisible(false)}
+                                    jobId={job.id}
+                                    jobTitle={job.title}
                                 />
                             )}
                         </View>
-                        
+
                         <View style={Styles.companyInfo}>
                             <Text style={Styles.companyName}>
-                                {job.company?.name || 'Company Name Not Available'}
+                                Company name: {job.company?.name || 'Company Name Not Available'}
                             </Text>
                         </View>
-                        
+
                         <Text style={Styles.jobLocation}>
-                            �� {job.location || 'Location not specified'}
+                            Location: {job.location || 'Location not specified'}
                         </Text>
-                        
+
                         <Text style={Styles.jobSalary}>
-                            💰 {job.salary || 'Salary not specified'}
+                            Salary: {job.salary || 'Salary not specified'}
                         </Text>
 
                         <View style={Styles.descriptionContainer}>
-                            <Text style={Styles.descriptionTitle}>📋 Mô tả công việc</Text>
-                            <RenderHTML 
-                                source={{html: job.description || '<p>No Description</p>'}} 
+                            <Text style={Styles.descriptionTitle}>Job Description</Text>
+                            <RenderHTML
+                                source={{ html: job.description || '<p>No Description</p>' }}
                                 contentWidth={width - 40}
                             />
                         </View>
                     </Card.Content>
                 </Card>
             </ScrollView>
+
+
         </View>
     );
 }

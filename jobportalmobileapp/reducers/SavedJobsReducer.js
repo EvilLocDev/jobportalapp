@@ -1,13 +1,16 @@
+// SaveJobsReducer.js
+
 const SavedJobsReducer = (currentState, action) => {
     switch (action.type) {
         case "set":
-            // Khởi tạo danh sách công việc đã lưu (thường sau khi login)
+            // Khởi tạo/Thay thế toàn bộ danh sách bằng dữ liệu từ API
             return action.payload;
         case "add":
-            // Thêm một công việc vào danh sách
+            if (currentState.some(job => job.id === action.payload.id)) {
+                return currentState; // Nếu đã có, không làm gì cả
+            }
             return [...currentState, action.payload];
         case "remove":
-            // Xóa một công việc khỏi danh sách
             return currentState.filter(job => job.id !== action.payload.id);
         default:
             return currentState;
