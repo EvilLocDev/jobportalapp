@@ -1,6 +1,6 @@
+from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from .models import User, Profile, Resume, Company, Job, Application, SaveJob
-
 
 class UserSerializer(ModelSerializer):
     def to_representation(self, instance):
@@ -10,7 +10,7 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'password', 'first_name', 'last_name', 'avatar', 'email']
+        fields = [ 'id', 'username', 'password', 'first_name', 'last_name', 'avatar', 'email']
         extra_kwargs = {
             'password': {
                 'write_only': True
@@ -37,17 +37,24 @@ class UserDetailSerializer(UserSerializer):
         model = UserSerializer.Meta.model
         fields = UserSerializer.Meta.fields + ['profile']
 
+    # def create(self, validated_data):
+    #     profile_data = validated_data.pop('profile')
+    #     user_data = validated_data
+    #
+    #     # Tạo User trước
+    #     u = User(**user_data)
+    #     u.set_password(u.password)
+    #     u.save()
+    #
+    #     # Tạo Profile sau
+    #     Profile.objects.create(user=u, **profile_data)
+    #
+    #     return u
+
 class ResumeSerializer(ModelSerializer):
     class Meta:
         model = Resume
-        fields = ['id', 'candidate_id', 'title', 'created_date', 'is_default']
-
-class ResumeDetailSerializer(ResumeSerializer):
-    candidate = UserSerializer()
-
-    class Meta:
-        model = ResumeSerializer.Meta.model
-        fields = ResumeSerializer.Meta.fields + ['file', 'candidate']
+        fields = ['id','candidate_id', 'title', 'file', 'created_date', 'is_default']
 
 class CompanySerializer(ModelSerializer):
     def to_representation(self, instance):
@@ -78,17 +85,21 @@ class JobDetailSerializer(JobSerializer):
         model = JobSerializer.Meta.model
         fields = JobSerializer.Meta.fields + ['description', 'location', 'company', 'is_saved']
 
+
 class ApplicationSerializer(ModelSerializer):
     class Meta:
         model = Application
-        fields = ['id', 'candidate_id', 'status', 'created_date']
+        fields = ['id', 'resume', 'status', 'created_date', 'candidate', 'job']
+        read_only_fields = ['candidate', 'job', 'status']
 
-class ApplicationDetailSerializer(ApplicationSerializer):
-    candidate = UserSerializer()
+    def validate_resume(self, resume):
+        request = self.context.get('request')
+        if not request or not hasattr(request, 'user'):
+            return resume
 
-    class Meta:
-        model = ApplicationSerializer.Meta.model
-        fields = ApplicationSerializer.Meta.fields + ['resume_id', 'job', 'candidate']
+        if resume.candidate != request.user:
+            raise serializers.ValidationError("Bạn không thể sử dụng CV này.")
+        return resume
 
 class SaveJobSerializer(ModelSerializer):
     job = JobSerializer()

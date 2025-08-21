@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Card, ActivityIndicator } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -8,25 +8,32 @@ const SaveJobs = () => {
     const savedJobs = useContext(SavedJobsContext);
     const navigation = useNavigation();
 
-    // Hàm để render mỗi item trong danh sách
-    const renderJobItem = ({ item }) => (
-        <TouchableOpacity onPress={() => navigation.navigate('job-details', { jobId: item.id })}>
-            <Card style={styles.card}>
-                <Card.Content>
-                    <Text variant="titleLarge"  style={styles.title}>{item.title}</Text>
-                    <Text variant="bodyMedium" style={styles.company}>{item.company_id}</Text>
-                    <Text variant="bodyMedium" style={styles.salary}>
-                        💰 {item.salary ? `${item.salary.toLocaleString()} VNĐ` : 'Lương thỏa thuận'}
-                    </Text>
-                </Card.Content>
-            </Card>
-        </TouchableOpacity>
-    );
+    const renderJobItem = ({ item }) => {
+        // Lấy thông tin job từ thuộc tính lồng nhau
+        const job = item;
+
+        if (!job) {
+            return null;
+        }
+
+        return (
+            <TouchableOpacity onPress={() => navigation.navigate('index', { screen: 'job-details', params: { jobId: job.id } })}>
+                <Card style={styles.card}>
+                    <Card.Content>
+                        <Text variant="titleLarge">{job.title}</Text>
+                        <Text variant="bodyMedium">
+                            {job.salary ? `${job.salary.toLocaleString()} VND` : 'Lương thỏa thuận'}
+                        </Text>
+                    </Card.Content>
+                </Card>
+            </TouchableOpacity>
+        );
+    };
 
     // Nếu chưa có dữ liệu (đang tải hoặc user chưa đăng nhập)
     if (savedJobs === null) {
         return (
-            <View style={styles.centered}>
+            <View>
                 <ActivityIndicator size="large" />
             </View>
         );
@@ -35,9 +42,7 @@ const SaveJobs = () => {
     // Nếu không có công việc nào được lưu
     if (savedJobs.length === 0) {
         return (
-            <View style={styles.centered}>
-                <Text style={styles.emptyText}>Bạn chưa lưu công việc nào.</Text>
-            </View>
+            <Text>Bạn chưa lưu công việc nào.</Text>
         );
     }
 
@@ -47,7 +52,8 @@ const SaveJobs = () => {
             <FlatList
                 data={savedJobs}
                 renderItem={renderJobItem}
-                keyExtractor={(item) => item.id.toString()}
+                // Sử dụng ID của bản ghi SaveJob làm key, nó luôn là duy nhất trong danh sách này
+                keyExtractor={(item) => item.id.toString()} 
                 contentContainerStyle={styles.list}
             />
         </View>
@@ -67,30 +73,7 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         elevation: 3,
     },
-    title: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    company: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 5,
-    },
-    salary: {
-        fontSize: 16,
-        color: '#007bff',
-        fontWeight: '500',
-    },
-    centered: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    emptyText: {
-        fontSize: 16,
-        color: '#888',
-    },
+
 });
 
 export default SaveJobs;

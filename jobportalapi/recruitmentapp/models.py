@@ -38,6 +38,11 @@ class Resume(BaseModel):
     def __str__(self):
         return self.title
 
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            # Remove default status of all other CVs of the same candidate
+            Resume.objects.filter(candidate=self.candidate).exclude(pk=self.pk).update(is_default=False)
+        super(Resume, self).save(*args, **kwargs)
 
 # Company
 class Company(BaseModel):
@@ -86,6 +91,7 @@ class Application(BaseModel):
 
     class Meta:
         ordering = ['-id',]
+        unique_together = ('job', 'candidate')
 
 class SaveJob(BaseModel):
     job = models.ForeignKey(Job, on_delete=models.CASCADE)

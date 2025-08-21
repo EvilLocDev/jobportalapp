@@ -12,18 +12,23 @@ const Applications = ({route}) => {
     const nav = useNavigation();
 
     const loadApplications = async () => {
-        try {
-            setLoading(true);
+    try {
+        setLoading(true);
 
-            let res = await Apis.get(endpoints['applications'](jobId));
-            setApplications(res.data);
-
-        } catch (ex) {
-            console.error(ex);
-        } finally {
-            setLoading(false)
+        // Sử dụng authApis nếu user đã đăng nhập
+        let api = Apis;
+        if (user && user.access_token) {
+            api = authApis(user.access_token);
         }
+
+        let res = await api.get(endpoints['applications'](jobId));
+        setApplications(res.data);
+    } catch (ex) {
+        console.error(ex);
+    } finally {
+        setLoading(false)
     }
+}
 
     useEffect(() => {
         loadApplications();
