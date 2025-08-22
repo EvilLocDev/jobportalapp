@@ -2,7 +2,8 @@ import React, { useContext, useState, useEffect } from "react";
 import { View, ScrollView, TouchableOpacity, Image, Alert } from "react-native";
 import { MyDispatchContext, MyUserContext } from "../../configs/Contexts";
 import MyStyles from "../../styles/MyStyles";
-import { Button, TextInput, Avatar, ActivityIndicator, Text } from "react-native-paper";
+
+import { Button, TextInput, Avatar, ActivityIndicator, RadioButton, Text } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { authApis, endpoints } from "../../configs/Apis";
 import * as ImagePicker from 'expo-image-picker';
@@ -17,13 +18,12 @@ const Profile = () => {
 
     useEffect(() => {
         if (user) {
-            // Tạo một bản sao để chỉnh sửa, tránh thay đổi trực tiếp context
+            // Tao bang sao tranh sua truc tiep context
             setUserInfo({
                 ...user,
                 phone_number: user.profile?.phone_number || '',
                 address: user.profile?.address || '',
-                user_type: user.profile?.user_type || 'candidate', // Mặc định là candidate
-                // Trường avatar cần xử lý riêng
+                user_type: user.profile?.user_type || 'candidate',
                 avatar: { uri: user.avatar }
             });
         }
@@ -52,16 +52,14 @@ const Profile = () => {
         setLoading(true);
         try {
             const form = new FormData();
-            // Cacc trường thông tin người dùng
+
             form.append('first_name', userInfo.first_name);
             form.append('last_name', userInfo.last_name);
 
-            // API của mong muốn là gửi từng trường của profile
             form.append('profile.phone_number', userInfo.phone_number);
             form.append('profile.address', userInfo.address);
             form.append('profile.user_type', userInfo.user_type);
 
-            // Xử lý avatar nếu nó đã được thay đổi
             if (userInfo.avatar && userInfo.avatar.uri !== user.avatar) {
                  form.append('avatar', {
                     uri: userInfo.avatar.uri,
@@ -85,8 +83,8 @@ const Profile = () => {
             Alert.alert("Thành công", "Cập nhật thông tin thành công!");
 
         } catch (ex) {
-            console.error(ex);
-            Alert.alert("Lỗi", "Có lỗi xảy ra. Vui lòng thử lại.");
+            console.log('Error:', ex);
+            Alert.alert("Error", "Co the ban nhap sai hoac thieu truong.");
         } finally {
             setLoading(false);
         }
@@ -112,16 +110,27 @@ const Profile = () => {
             <TextInput label="Tên" value={userInfo.first_name} onChangeText={(t) => updateState('first_name', t)} style={MyStyles.m} />
             <TextInput label="Họ" value={userInfo.last_name} onChangeText={(t) => updateState('last_name', t)} style={MyStyles.m} />
             <TextInput label="Email" value={userInfo.email} editable={false} style={MyStyles.m} />
-            <TextInput label="Số điện thoại" value={userInfo.phone_number} onChangeText={(t) => updateState('phone_number', t)} style={MyStyles.m} keyboardType="phone-pad" />
-            <TextInput label="Địa chỉ" value={userInfo.address} onChangeText={(t) => updateState('address', t)} style={MyStyles.m} />
+            <TextInput label="SDT" value={userInfo.phone_number} onChangeText={(t) => updateState('phone_number', t)} style={MyStyles.m} keyboardType="phone-pad" />
+            <TextInput label="Address" value={userInfo.address} onChangeText={(t) => updateState('address', t)} style={MyStyles.m} />
             
-            <Text style={MyStyles.m}>Bạn là:</Text>
-            {/* Thêm lựa chọn user_type (ví dụ dùng RadioButton) ở đây nếu cần */}
+            {/* <View style={MyStyles.m}>
+                <Text style={{marginBottom: 8, fontSize: 16}}>You are:</Text>
+                <RadioButton.Group onValueChange={newValue => updateState('user_type', newValue)} value={userInfo.user_type}>
+                    <View style={MyStyles.row}>
+                        <RadioButton value="candidate" />
+                        <Text>Candidate</Text>
+                    </View>
+                    <View style={MyStyles.row}>
+                        <RadioButton value="employer" />
+                        <Text>Employer</Text>
+                    </View>
+                </RadioButton.Group>
+            </View> */}
 
             <Button loading={loading} disabled={loading} onPress={updateUserProfile} mode="contained" style={MyStyles.m}>Cập nhật</Button>
 
             <Button 
-                onPress={() => nav.navigate('ChangePassword')} // Thêm dòng này
+                onPress={() => nav.navigate('ChangePassword')}
                 mode="contained" 
                 style={MyStyles.m}
                 icon="key-variant"

@@ -56,8 +56,8 @@ const Login = () => {
 
                 let res = await Apis.post(endpoints['login'], {
                     ...user,
-                    client_id: 'rMOa7XeLXYqdOr2LaM2NQqg7lSXxfx4CMkSL2Tii',
-                    client_secret: 'zYhQTkGW40tppegfft68eQ6hQXx2RyH0D7FyAx5a9oMapzGDiunwb6SuCSmnYwz1pbYzneRgeu8XqKVwS2jmthfAv5kLuobFqZYCTatx2NuqzYbJyyr0Tw4avMBEZMbs',
+                    client_id: 'oPE1IbyrWjHGbX5MB6VrgtzDEvLMWm4mWQqrmu5o',
+                    client_secret: 'ROSmb7qEVGddhEwlT0Af2x4iyqMGyeMz99GOPcXjGfb7rxWzMNmX4wepq5Unq2ETW5dghktcje3UyQQeaSKFGmcDAu61AZNW1eLjiCQqnBRzBvafuNUYdwh9GLd4BycX',
                     grant_type: 'password'
                 });
 
@@ -84,7 +84,8 @@ const Login = () => {
                 });
 
             } catch (ex) {
-                console.error(ex);
+                console.log('error:', ex);
+                lert.alert("Error", "Hay nhap dung username va password");
             } finally {
                 setLoading(false);
             }
