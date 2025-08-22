@@ -8,9 +8,14 @@ from .models import User, Profile, Resume, Company, Job, SaveJob, Application
 
 class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
     queryset = User.objects.select_related('profile').filter(profile__active=True)
-    serializer_class = serializers.UserDetailSerializer
     pagination_class = paginators.ItemPaginator
     parser_classes = [parsers.MultiPartParser]
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            # /users/ (post)
+            return serializers.UserSerializer
+        return serializers.UserDetailSerializer
 
     def get_queryset(self):
         query = self.queryset
@@ -57,7 +62,7 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
     def get_current_user(self, request):
         u = request.user
         if request.method == 'PATCH':
-            # Sử dụng UserDetailSerializer để có thể cập nhật cả profile
+            # Su dung UserDetailSerializer de cap nhat cac truong cua user va profile nhung tru password
             serializer = serializers.UserDetailSerializer(u, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
