@@ -91,12 +91,26 @@ class CompanySerializer(ModelSerializer):
 
     class Meta:
         model = Company
-        fields = ['id', 'user_id', 'name', 'logo', 'created_date']
+        fields = ['id', 'user_id', 'name', 'logo', 'status', 'created_date']
+
+class CompanyDetailSerializer(CompanySerializer):
+    class Meta:
+        model = CompanySerializer.Meta.model
+        fields = ['id', 'user', 'name', 'description', 'logo', 'website', 'address', 'status', 'created_date']
+        read_only_fields = ['status', 'user']
 
 class JobSerializer(ModelSerializer):
     class Meta:
         model = Job
         fields = ['id', 'company_id', 'title', 'salary', 'job_type', 'created_date']
+
+class JobCreateUpdateSerializer(ModelSerializer):
+    # client chi can gui company_id
+    company = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all())
+
+    class Meta:
+        model = Job
+        fields = ['company', 'title', 'description', 'location', 'salary', 'job_type']
 
 class JobDetailSerializer(JobSerializer):
     company = CompanySerializer()

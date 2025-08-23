@@ -1,4 +1,5 @@
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from . import perms
@@ -100,23 +101,81 @@ class ResumeViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.UpdateAP
     serializer_class = serializers.ResumeSerializer
     permission_classes = [perms.IsResumeOwner]
 
-class CompanyViewSet(viewsets.ViewSet, generics.ListAPIView):
+class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.filter(active=True)
     serializer_class = serializers.CompanySerializer
+    parser_classes = [parsers.MultiPartParser]
+
+    def get_serializer_class(self):
+        if self.action in ['retrieve', 'create', 'update', 'partial_update']:
+            return serializers.CompanyDetailSerializer
+        # Xem gon
+        return self.serializer_class
+
+    def get_permissions(self):
+        if self.action in ['approve', 'reject']:
+            return [permissions.IsAdminUser()]
+        if self.action == 'create':
+            return [perms.IsEmployer()]
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [perms.IsCompanyOwner()]
+        return [permissions.AllowAny()]
+
+    def get_queryset(self):
+        # Nguoi dung thong thay cac cong ty da duoc duyet
+        query = self.queryset.filter(status='approved')
+
+        user = self.request.user
+        # Cho xem tat ca neu la admin
+        if user.is_authenticated and (user.is_staff or user.is_superuser):
+            return self.queryset
+
+        # Xem company cho employer
+        if user.is_authenticated and hasattr(user, 'profile') and user.profile.user_type == 'employer':
+            return self.queryset.filter(user=user) | query
+
+        return query
+
+    def perform_create(self, serializer):
+        # Gan nguoi dang nhap la chu company
+        serializer.save(user=self.request.user)
+
+    # /companies/{id}/approve/
+    @action(methods=['post'], detail=True, url_path='approve')
+    def approve(self, request, pk):
+        company = self.get_object()
+        company.status = 'approved'
+        company.save()
+        return Response(serializers.CompanyDetailSerializer(company).data, status=status.HTTP_200_OK)
+
+    # /companies/{id}/reject/
+    @action(methods=['post'], detail=True, url_path='reject')
+    def reject(self, request, pk):
+        company = self.get_object()
+        company.status = 'rejected'
+        company.save()
+        return Response(serializers.CompanyDetailSerializer(company).data, status=status.HTTP_200_OK)
 
     # /companies/<id>/jobs/
     @action(methods=['get'], detail=True, url_path='jobs')
     def get_jobs(self, request, pk):
-        jobs = self.get_object().job_set.filter(active=True)
+        company = self.get_object()
+        if company.status != 'approved':
+            return Response({"detail": "Công ty này chưa được duyệt."}, status=status.HTTP_403_FORBIDDEN)
+
+        jobs = company.job_set.filter(active=True)
         return Response(serializers.JobSerializer(jobs, many=True).data)
 
-class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIView):
+class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIView, generics.CreateAPIView):
     # jobs/<id>/
     queryset = Job.objects.select_related('company').filter(active=True) # Lay nhieu job thuoc mot cong ty
     serializer_class = serializers.JobDetailSerializer
     pagination_class = paginators.ItemPaginator
 
     def get_permissions(self):
+        if self.action == 'create':
+            return [perms.IsEmployer()]
+
         if self.action == 'applications_action':
             if self.request.method == 'POST':
                 return [perms.IsCandidate()]
@@ -142,6 +201,22 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
             query = query.filter(company_id=com_id)
 
         return query
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return serializers.JobCreateUpdateSerializer
+        return serializers.JobDetailSerializer
+
+    def perform_create(self, serializer):
+        company = serializer.validated_data.get('company')
+
+        if company.user != self.request.user:
+            raise ValidationError("Bạn không có quyền đăng tin cho công ty này.")
+
+        if company.status != 'approved':
+            raise ValidationError("Công ty của bạn chưa được duyệt. Không thể đăng tin tuyển dụng.")
+
+        serializer.save()
 
     # /jobs/{id}/save-job/
     @action(methods=['post'], detail=True, url_path='save-job', permission_classes=[perms.IsCandidate])
