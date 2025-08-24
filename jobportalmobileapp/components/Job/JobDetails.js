@@ -12,6 +12,7 @@ const JobDetails = ({ route }) => {
     const [isApplyModalVisible, setApplyModalVisible] = useState(false);
     const jobId = route.params?.jobId;
     const { width } = useWindowDimensions();
+    const nav = useNavigation();
 
     // Consumer
     const user = useContext(MyUserContext);
@@ -38,7 +39,7 @@ const JobDetails = ({ route }) => {
         }
     }, [jobId, user]);
 
-    // Hàm xử lý lưu/bỏ lưu công việc
+
     const handleSaveJob = async () => {
         try {
             const api = authApis(user.access_token);
@@ -48,12 +49,7 @@ const JobDetails = ({ route }) => {
             setJob(updatedJob);
 
             if (updatedJob.is_saved) {
-                // có cấu trúc giống như SaveJobSerializer.
-                const newSavedJobEntry = {
-                    id: updatedJob.id,
-                    job: updatedJob
-                };
-                savedJobsDispatch({ type: "add", payload: newSavedJobEntry });
+                savedJobsDispatch({ type: "add", payload: updatedJob });
                 Alert.alert("Thành công", "Đã lưu công việc!");
             } else {
                 savedJobsDispatch({ type: "remove", payload: updatedJob });
@@ -123,6 +119,7 @@ const JobDetails = ({ route }) => {
                                     onClose={() => setApplyModalVisible(false)}
                                     jobId={job.id}
                                     jobTitle={job.title}
+                                    navigation={nav}
                                 />
                             )}
                         </View>

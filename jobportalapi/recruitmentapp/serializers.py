@@ -64,14 +64,21 @@ class UserDetailSerializer(UserSerializer):
         return user
 
     def update(self, instance, validated_data):
-        # Dữ liệu 'profile' trong request không
         profile_data = validated_data.pop('profile', None)
 
-        # Cập nhật các trường của User (dùng lại logic của serializer cha)
+        # Dung lai logic cua cha
         user_instance = super().update(instance, validated_data)
 
         if profile_data:
             profile_instance = user_instance.profile
+            new_user_type = profile_data.get('user_type')
+
+            if profile_instance.user_type == 'employer' and new_user_type == 'candidate':
+                if instance.company_set.exists():
+                    raise serializers.ValidationError({
+                        "user_type": "Bạn không thể đổi vai trò thành Candidate vì bạn đã tạo công ty. Vui lòng liên hệ hỗ trợ."
+                    })
+
             for attr, value in profile_data.items():
                 setattr(profile_instance, attr, value)
             profile_instance.save()
@@ -91,22 +98,30 @@ class CompanySerializer(ModelSerializer):
 
     class Meta:
         model = Company
-        fields = ['id', 'user_id', 'name', 'logo', 'created_date']
+        fields = ['id', 'user_id', 'name', 'logo', 'status', 'created_date']
+
+class CompanyDetailSerializer(CompanySerializer):
+    class Meta:
+        model = CompanySerializer.Meta.model
+        fields = ['id', 'user', 'name', 'description', 'logo', 'website', 'address', 'status', 'created_date']
+        read_only_fields = ['status', 'user']
 
 class JobSerializer(ModelSerializer):
     class Meta:
         model = Job
         fields = ['id', 'company_id', 'title', 'salary', 'job_type', 'created_date']
 
+class JobCreateUpdateSerializer(ModelSerializer):
+    # client chi can gui company_id
+    company = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all())
+
+    class Meta:
+        model = Job
+        fields = ['company', 'title', 'description', 'location', 'salary', 'job_type']
+
 class JobDetailSerializer(JobSerializer):
     company = CompanySerializer()
-    is_saved = SerializerMethodField()
-
-    def get_is_saved(self, job):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return job.savejob_set.filter(user=request.user, active=True).exists()
-        return None
+    is_saved = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = JobSerializer.Meta.model

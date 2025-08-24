@@ -16,6 +16,8 @@ const Profile = () => {
     const [userInfo, setUserInfo] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    const [isEmployerWithData, setIsEmployerWithData] = useState(false);
+
     useEffect(() => {
         if (user) {
             // Tao bang sao tranh sua truc tiep context
@@ -27,6 +29,22 @@ const Profile = () => {
                 avatar: { uri: user.avatar }
             });
         }
+
+        const checkEmployerData = async () => {
+            if (user && user.profile?.user_type === 'employer') {
+                try {
+                    const res = await authApis(user.access_token).get(endpoints['my-companies']);
+                    if (res.data.length > 0) {
+                        setIsEmployerWithData(true);
+                    }
+                } catch (ex) {
+                    console.error("Failed to check employer data:", ex);
+                }
+            }
+        };
+
+        checkEmployerData();
+        
     }, [user]);
 
     const updateState = (field, value) => {
@@ -83,7 +101,7 @@ const Profile = () => {
             Alert.alert("Thành công", "Cập nhật thông tin thành công!");
 
         } catch (ex) {
-            console.log('Error:', ex);
+            console.log('Error:', ex.response.data);
             Alert.alert("Error", "Co the ban nhap sai hoac thieu truong.");
         } finally {
             setLoading(false);
@@ -113,21 +131,39 @@ const Profile = () => {
             <TextInput label="SDT" value={userInfo.phone_number} onChangeText={(t) => updateState('phone_number', t)} style={MyStyles.m} keyboardType="phone-pad" />
             <TextInput label="Address" value={userInfo.address} onChangeText={(t) => updateState('address', t)} style={MyStyles.m} />
             
-            {/* <View style={MyStyles.m}>
-                <Text style={{marginBottom: 8, fontSize: 16}}>You are:</Text>
-                <RadioButton.Group onValueChange={newValue => updateState('user_type', newValue)} value={userInfo.user_type}>
-                    <View style={MyStyles.row}>
-                        <RadioButton value="candidate" />
-                        <Text>Candidate</Text>
-                    </View>
-                    <View style={MyStyles.row}>
-                        <RadioButton value="employer" />
-                        <Text>Employer</Text>
-                    </View>
-                </RadioButton.Group>
-            </View> */}
+            <View style={MyStyles.m}>
+                <Text style={{marginBottom: 8, fontSize: 16}}>Vai trò của bạn:</Text>
+                {/* Hien thi Text neu la Employer co company */}
+                {isEmployerWithData ? (
+                    <Text style={{ fontStyle: 'italic', color: 'gray' }}>
+                        Nhà tuyển dụng (Không thể thay đổi vì đã có dữ liệu công ty)
+                    </Text>
+                ) : (
+                    <RadioButton.Group onValueChange={newValue => updateState('user_type', newValue)} value={userInfo.user_type}>
+                        <View style={MyStyles.row}>
+                            <RadioButton value="candidate" />
+                            <Text>Ứng viên</Text>
+                        </View>
+                        <View style={MyStyles.row}>
+                            <RadioButton value="employer" />
+                            <Text>Nhà tuyển dụng</Text>
+                        </View>
+                    </RadioButton.Group>
+                )}
+            </View>
 
-            <Button loading={loading} disabled={loading} onPress={updateUserProfile} mode="contained" style={MyStyles.m}>Cập nhật</Button>
+            <Button loading={loading} disabled={loading} onPress={updateUserProfile} mode="contained" style={MyStyles.m}>Update</Button>
+
+            {user && user.profile?.user_type === 'candidate' && (
+                <Button 
+                    icon="file-document-multiple" 
+                    mode="contained-tonal" 
+                    onPress={() => nav.navigate('ResumeManagement')}
+                    style={MyStyles.m}
+                >
+                    CV Management
+                </Button>
+            )}
 
             <Button 
                 onPress={() => nav.navigate('ChangePassword')}
@@ -135,9 +171,9 @@ const Profile = () => {
                 style={MyStyles.m}
                 icon="key-variant"
             >
-                Đổi Mật Khẩu
+                Change Password
             </Button>
-            <Button onPress={logout} mode="outlined" style={MyStyles.m}>Đăng xuất</Button>
+            <Button onPress={logout} mode="outlined" style={MyStyles.m}>Logout</Button>
         </ScrollView>
     );
 }

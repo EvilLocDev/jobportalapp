@@ -9,20 +9,19 @@ const SaveJobs = () => {
     const navigation = useNavigation();
 
     const renderJobItem = ({ item }) => {
-        // Lấy thông tin job từ thuộc tính lồng nhau
-        const job = item;
-
-        if (!job) {
+        console.log("Rendering job item:", item);
+        
+        if (!item) {
             return null;
         }
 
         return (
-            <TouchableOpacity onPress={() => navigation.navigate('index', { screen: 'job-details', params: { jobId: job.id } })}>
+            <TouchableOpacity onPress={() => navigation.navigate('index', { screen: 'job-details', params: { jobId: item.id } })}>
                 <Card style={styles.card}>
                     <Card.Content>
-                        <Text variant="titleLarge">{job.title}</Text>
+                        <Text variant="titleLarge">{item.title}</Text> 
                         <Text variant="bodyMedium">
-                            {job.salary ? `${job.salary.toLocaleString()} VND` : 'Lương thỏa thuận'}
+                            {item.salary ? `${item.salary.toLocaleString()} VND` : 'Lương thỏa thuận'}
                         </Text>
                     </Card.Content>
                 </Card>
