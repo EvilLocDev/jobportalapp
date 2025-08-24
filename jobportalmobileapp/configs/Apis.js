@@ -6,6 +6,9 @@ export const endpoints = {
     'profiles': '/profiles/',
     'resumes': (userId) => `/users/${userId}/resumes/`,
     'companies': '/companies/',
+    'my-companies': '/companies/?my_companies=true',
+    'my-approved-companies': '/companies/?my_companies=true&status=approved',
+    'company-jobs': (companyId) => `/companies/${companyId}/jobs/`,
     'jobs': '/jobs/',
     'job-details': (jobId) => `/jobs/${jobId}/`,
 

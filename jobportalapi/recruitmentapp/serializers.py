@@ -64,14 +64,21 @@ class UserDetailSerializer(UserSerializer):
         return user
 
     def update(self, instance, validated_data):
-        # Dữ liệu 'profile' trong request không
         profile_data = validated_data.pop('profile', None)
 
-        # Cập nhật các trường của User (dùng lại logic của serializer cha)
+        # Dung lai logic cua cha
         user_instance = super().update(instance, validated_data)
 
         if profile_data:
             profile_instance = user_instance.profile
+            new_user_type = profile_data.get('user_type')
+
+            if profile_instance.user_type == 'employer' and new_user_type == 'candidate':
+                if instance.company_set.exists():
+                    raise serializers.ValidationError({
+                        "user_type": "Bạn không thể đổi vai trò thành Candidate vì bạn đã tạo công ty. Vui lòng liên hệ hỗ trợ."
+                    })
+
             for attr, value in profile_data.items():
                 setattr(profile_instance, attr, value)
             profile_instance.save()
@@ -114,13 +121,7 @@ class JobCreateUpdateSerializer(ModelSerializer):
 
 class JobDetailSerializer(JobSerializer):
     company = CompanySerializer()
-    is_saved = SerializerMethodField()
-
-    def get_is_saved(self, job):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return job.savejob_set.filter(user=request.user, active=True).exists()
-        return None
+    is_saved = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = JobSerializer.Meta.model

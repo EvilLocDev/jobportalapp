@@ -1,3 +1,4 @@
+from django.db.models import OuterRef, Exists
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -122,17 +123,20 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return [permissions.AllowAny()]
 
     def get_queryset(self):
-        # Nguoi dung thong thay cac cong ty da duoc duyet
+        user = self.request.user
+
+        my_companies_param = self.request.query_params.get('my_companies')
+
+        if my_companies_param and my_companies_param.lower() == 'true':
+            if perms.IsEmployer().has_permission(self.request, self):
+                return self.queryset.filter(user=user).order_by('-created_date')
+            else:
+                return self.queryset.none()
+
         query = self.queryset.filter(status='approved')
 
-        user = self.request.user
-        # Cho xem tat ca neu la admin
         if user.is_authenticated and (user.is_staff or user.is_superuser):
-            return self.queryset
-
-        # Xem company cho employer
-        if user.is_authenticated and hasattr(user, 'profile') and user.profile.user_type == 'employer':
-            return self.queryset.filter(user=user) | query
+            return self.queryset.order_by('-created_date')
 
         return query
 
@@ -189,6 +193,15 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
 
     def get_queryset(self):
         query = self.queryset
+        user = self.request.user
+
+        if user.is_authenticated:
+            saved_jobs_subquery = SaveJob.objects.filter(
+                user=user,
+                job=OuterRef('pk'),
+                active=True
+            )
+            query = query.annotate(is_saved=Exists(saved_jobs_subquery))
 
         # /jobs/?q=<keyword>
         q = self.request.query_params.get('q')

@@ -48,12 +48,7 @@ const JobDetails = ({ route }) => {
             setJob(updatedJob);
 
             if (updatedJob.is_saved) {
-                // có cấu trúc giống như SaveJobSerializer.
-                const newSavedJobEntry = {
-                    id: updatedJob.id,
-                    job: updatedJob
-                };
-                savedJobsDispatch({ type: "add", payload: newSavedJobEntry });
+                savedJobsDispatch({ type: "add", payload: updatedJob });
                 Alert.alert("Thành công", "Đã lưu công việc!");
             } else {
                 savedJobsDispatch({ type: "remove", payload: updatedJob });
