@@ -101,7 +101,7 @@ const Profile = () => {
             Alert.alert("Thành công", "Cập nhật thông tin thành công!");
 
         } catch (ex) {
-            console.log('Error:', ex);
+            console.log('Error:', ex.response.data);
             Alert.alert("Error", "Co the ban nhap sai hoac thieu truong.");
         } finally {
             setLoading(false);
@@ -153,6 +153,17 @@ const Profile = () => {
             </View>
 
             <Button loading={loading} disabled={loading} onPress={updateUserProfile} mode="contained" style={MyStyles.m}>Update</Button>
+
+            {user && user.profile?.user_type === 'candidate' && (
+                <Button 
+                    icon="file-document-multiple" 
+                    mode="contained-tonal" 
+                    onPress={() => nav.navigate('ResumeManagement')}
+                    style={MyStyles.m}
+                >
+                    CV Management
+                </Button>
+            )}
 
             <Button 
                 onPress={() => nav.navigate('ChangePassword')}

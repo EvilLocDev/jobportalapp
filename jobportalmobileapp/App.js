@@ -12,6 +12,7 @@ import Profile from "./components/User/Profile";
 import ChangePassword from "./components/User/ChangePassword";
 import JobDetails from "./components/Job/JobDetails";
 import SaveJobs from "./components/User/SaveJobs";
+import ResumeManagement from "./components/Resume/ResumeManagement";
 
 import CreateCompany from "./components/Company/CreateCompany";
 import CreateJob from "./components/Job/CreateJob";
@@ -20,7 +21,7 @@ import CompanyJobManagement from "./components/Job/CompanyJobManagement";
 
 import "./styles/globals.css"
 
-import { Icon } from "react-native-paper";
+import { Icon, PaperProvider } from "react-native-paper";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -35,6 +36,7 @@ const ProfileStackNavigator = () => {
         <ProfileStack.Navigator>
             <ProfileStack.Screen name="ProfileInfo" component={Profile} options={{ title: "Thông tin cá nhân" }} />
             <ProfileStack.Screen name="ChangePassword" component={ChangePassword} options={{ title: "Đổi mật khẩu" }} />
+            <ProfileStack.Screen name="ResumeManagement" component={ResumeManagement} options={{ title: "Quản lý CV" }} />
         </ProfileStack.Navigator>
     );
 }
@@ -78,7 +80,6 @@ const StackNavigator = () => {
 const TabNavigator = () => {
     const user = useContext(MyUserContext);
 
-    console.log('user:', user);
 
     return (
         <Tab.Navigator>
@@ -132,6 +133,8 @@ const App = () => {
     const [user, dispatch] = useReducer(MyUserReducer, null);
     const [savedJobs, savedJobsDispatch] = useReducer(SavedJobsReducer, []);
 
+    console.log("App user state:", user);
+
     useEffect(() => {
         const loadSavedJobs = async () => {
             try {
@@ -156,19 +159,22 @@ const App = () => {
     }, [user]);
 
     return (
-        <MyUserContext.Provider value={user}>
-            <MyDispatchContext.Provider value={dispatch}>
+        <PaperProvider>
+            <MyUserContext.Provider value={user}>
+                <MyDispatchContext.Provider value={dispatch}>
 
-                <SavedJobsContext.Provider value={savedJobs}>
-                    <SavedJobsDispatchContext.Provider value={savedJobsDispatch}>
-                        <NavigationContainer>
-                            <TabNavigator />
-                        </NavigationContainer>
-                    </SavedJobsDispatchContext.Provider>
-                </SavedJobsContext.Provider>
+                    <SavedJobsContext.Provider value={savedJobs}>
+                        <SavedJobsDispatchContext.Provider value={savedJobsDispatch}>
+                            <NavigationContainer>
+                                <TabNavigator />
+                            </NavigationContainer>
+                        </SavedJobsDispatchContext.Provider>
+                    </SavedJobsContext.Provider>
 
-            </MyDispatchContext.Provider>
-        </MyUserContext.Provider>
+                </MyDispatchContext.Provider>
+            </MyUserContext.Provider>
+        </PaperProvider>
+
     );
 }
 

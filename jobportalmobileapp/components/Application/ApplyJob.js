@@ -5,7 +5,7 @@ import { MyUserContext } from '../../configs/Contexts';
 import { authApis, endpoints } from '../../configs/Apis';
 import Styles from "./Styles";
 
-const ApplyJob = ({ visible, onClose, jobId, jobTitle }) => {
+const ApplyJob = ({ visible, onClose, jobId, jobTitle, navigation }) => {
     const user = useContext(MyUserContext);
     const [resumes, setResumes] = useState([]);
     const [selectedResume, setSelectedResume] = useState(null);
@@ -23,17 +23,16 @@ const ApplyJob = ({ visible, onClose, jobId, jobTitle }) => {
         try {
             const api = authApis(user.access_token);
             console.log("Fetching resumes for user:", user);
-            const res = await api.get(endpoints['resumes'](user.id));
+            const res = await api.get(endpoints['resumes']);
             setResumes(res.data);
-
-            // Tự động chọn CV mặc định nếu có
+            // Automatically select the default resume if available
             const defaultResume = res.data.find(r => r.is_default);
             if (defaultResume) {
                 setSelectedResume(defaultResume.id);
             }
 
         } catch (ex) {
-            console.error("Failed to load resumes:", ex);
+            console.log("Failed to load resumes:", ex);
             Alert.alert("Lỗi", "Không thể tải danh sách CV của bạn.");
         } finally {
             setLoading(false);
@@ -62,6 +61,18 @@ const ApplyJob = ({ visible, onClose, jobId, jobTitle }) => {
             setSubmitting(false);
         }
     };
+
+    const navigateToResumeManagement = () => {
+        onClose(); // Đóng modal trước khi điều hướng
+        navigation.navigate('profile', { screen: 'ResumeManagement' });
+    };
+
+    const renderEmpty = () => (
+        <View style={{alignItems: 'center'}}>
+            <Text>Bạn chưa có CV. Vui lòng tạo CV trong hồ sơ.</Text>
+            <Button onPress={navigateToResumeManagement}>Đi đến trang quản lý CV</Button>
+        </View>
+    );
 
     const renderResumeItem = ({ item }) => (
         <TouchableOpacity onPress={() => setSelectedResume(item.id)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
@@ -92,7 +103,7 @@ const ApplyJob = ({ visible, onClose, jobId, jobTitle }) => {
                             data={resumes}
                             renderItem={renderResumeItem}
                             keyExtractor={item => item.id.toString()}
-                            ListEmptyComponent={<Text>You do not have a CV yet. Please create one in your profile.</Text>}
+                            ListEmptyComponent={renderEmpty}
                         />
                     )}
                     <Divider style={{ marginVertical: 20 }} />
