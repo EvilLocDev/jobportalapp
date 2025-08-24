@@ -97,10 +97,25 @@ class ProfileViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIV
 
         return query
 
-class ResumeViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.UpdateAPIView):
+class ResumeViewSet(viewsets.ModelViewSet):
     queryset = Resume.objects.filter(active = True)
     serializer_class = serializers.ResumeSerializer
-    permission_classes = [perms.IsResumeOwner]
+    parser_classes = [parsers.JSONParser, parsers.MultiPartParser, parsers.FormParser]
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy', 'retrieve']:
+            self.permission_classes = [perms.IsResumeOwner]
+        elif self.action in ['create', 'list']:
+            self.permission_classes = [permissions.IsAuthenticated, perms.IsCandidate]
+        return super().get_permissions()
+
+    # Tra ve resume cua user dang nhap
+    def get_queryset(self):
+        return self.queryset.filter(candidate=self.request.user)
+
+    # Khi tao thi gang candidate la user
+    def perform_create(self, serializer):
+        serializer.save(candidate=self.request.user)
 
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.filter(active=True)
