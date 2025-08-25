@@ -76,6 +76,7 @@ class Job(BaseModel):
     location = models.CharField(max_length=255)
     salary = models.IntegerField()
     job_type = models.CharField(max_length=20, choices=JOB_TYPE_CHOICES)
+    expiration_date = models.DateField(null=True, blank=True)
 
     class Meta:
         unique_together = ( 'title', 'company')
