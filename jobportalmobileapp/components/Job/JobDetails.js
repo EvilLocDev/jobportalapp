@@ -1,10 +1,12 @@
 import { useEffect, useState, useContext } from "react";
 import { ScrollView, ActivityIndicator, useWindowDimensions, View, Image, Alert } from "react-native";
 import { Card, Text, IconButton, Button } from "react-native-paper";
-import RenderHTML from "react-native-render-html";
-import Apis, { authApis, endpoints } from "../../configs/Apis";
-import Styles from "./Styles";
 import { MyUserContext, SavedJobsContext, SavedJobsDispatchContext } from "../../configs/Contexts";
+import { useNavigation } from "@react-navigation/native";
+import Apis, { authApis, endpoints } from "../../configs/Apis";
+import RenderHTML from "react-native-render-html";
+import Styles from "./Styles";
+
 import ApplyJob from "../Application/ApplyJob";
 
 const JobDetails = ({ route }) => {

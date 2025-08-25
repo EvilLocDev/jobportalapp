@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, Card, ActivityIndicator, FAB } from 'react-native-paper';
+import { View, Alert, ScrollView, TouchableOpacity } from 'react-native';
+import { Text, Card, Button, ActivityIndicator, FAB } from 'react-native-paper';
 import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
 import { MyUserContext } from '../../configs/Contexts';
 import { authApis, endpoints } from '../../configs/Apis';
@@ -34,33 +34,50 @@ const CompanyJobManagement = () => {
         }
     }, [isFocused, companyId]);
 
+    const handleDeleteJob = (jobId) => {
+        Alert.alert("Confirm", "Do you really wan to delete this job?", [
+            { text: "Cancel" },
+            {
+                text: "OK",
+                onPress: async () => {
+                    try {
+                        await authApis(user.access_token).delete(endpoints['job-details'](jobId));
+                        setJobs(jobs.filter(j => j.id !== jobId));
+                    } catch (ex) {
+                        console.log("Error when delete job: ", ex);
+                        Alert.alert("Error", "Cannot delete this job.");
+                    }
+                }
+            }
+        ]);
+    };
+
     return (
         <View style={{ flex: 1 }}>
             {loading ? <ActivityIndicator style={MyStyles.margin} /> : (
                 <ScrollView>
-                    {jobs.length === 0 ? (
-                        <Text style={MyStyles.m}>There have no jobs</Text>
-                    ) : (
-                        jobs.map(item => (
-                            
-                            <TouchableOpacity key={item.id} onPress={() => nav.navigate('index', { screen: 'job-details', params: { jobId: item.id } })}>
-                                <Card style={MyStyles.m}>
-                                    <Card.Content>
-                                        <Text variant="titleMedium">{item.title}</Text>
-                                        <Text>Salary: {item.salary}</Text>
-                                        <Text>Type: {item.job_type}</Text>
-                                    </Card.Content>
-                                </Card>
+                    {jobs.map(item => (
+                        <Card key={item.id} style={MyStyles.m}>
+                            <TouchableOpacity onPress={() => nav.navigate('EmployerJobDetail', { jobId: item.id })}>
+                                <Card.Content>
+                                    <Text variant="titleMedium">{item.title}</Text>
+                                    <Text>Salary: {item.salary}</Text>
+                                    <Text>Type: {item.job_type}</Text>
+                                </Card.Content>
                             </TouchableOpacity>
-                        ))
-                    )}
+                            <Card.Actions>
+                                <Button onPress={() => nav.navigate('EditJob', { jobId: item.id })}>Edit</Button>
+                                <Button onPress={() => handleDeleteJob(item.id)} textColor='red'>Delete</Button>
+                            </Card.Actions>
+                        </Card>
+                    ))}
                 </ScrollView>
             )}
 
             <FAB
                 icon="plus"
                 style={MyStyles.fab}
-                onPress={() => nav.navigate('CreateJob', { onJobCreated: loadJobs })}
+                onPress={() => nav.navigate('CreateJob', { companyId: companyId })}
             />
         </View>
     );

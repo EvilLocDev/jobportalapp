@@ -18,6 +18,8 @@ import CreateCompany from "./components/Company/CreateCompany";
 import CreateJob from "./components/Job/CreateJob";
 import MyCompanies from "./components/Company/MyCompanies";
 import CompanyJobManagement from "./components/Job/CompanyJobManagement";
+import EditCompany from "./components/Company/EditCompany";
+import EditJob from "./components/Job/EditJob";
 
 import "./styles/globals.css"
 
@@ -55,6 +57,11 @@ const EmployerStackNavigator = () => {
                 options={{ title: "Tạo Công Ty Mới" }} 
             />
             <EmployerStack.Screen 
+                name="EditCompany" 
+                component={EditCompany} 
+                options={{ title: "Edit Comapany" }} 
+            />
+            <EmployerStack.Screen 
                 name="CompanyJobManagement" 
                 component={CompanyJobManagement} 
                 options={({ route }) => ({ title: `Việc làm tại ${route.params?.companyName}` })}
@@ -63,6 +70,16 @@ const EmployerStackNavigator = () => {
                 name="CreateJob" 
                 component={CreateJob} 
                 options={{ title: "Đăng Tin Mới" }} 
+            />
+            <EmployerStack.Screen 
+                name="EditJob" 
+                component={EditJob} 
+                options={{ title: "Edit Job" }} 
+            />
+            <EmployerStack.Screen 
+                name="EmployerJobDetail"
+                component={JobDetails}
+                options={{ title: "Chi Tiết Công Việc" }} 
             />
         </EmployerStack.Navigator>
     );

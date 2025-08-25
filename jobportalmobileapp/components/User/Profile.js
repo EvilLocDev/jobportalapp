@@ -1,10 +1,10 @@
-import React, { useContext, useState, useEffect } from "react";
-import { View, ScrollView, TouchableOpacity, Image, Alert } from "react-native";
+import React, { useContext, useState, useCallback } from "react";
+import { View, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { MyDispatchContext, MyUserContext } from "../../configs/Contexts";
 import MyStyles from "../../styles/MyStyles";
 
 import { Button, TextInput, Avatar, ActivityIndicator, RadioButton, Text } from "react-native-paper";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { authApis, endpoints } from "../../configs/Apis";
 import * as ImagePicker from 'expo-image-picker';
 
@@ -17,35 +17,52 @@ const Profile = () => {
     const [loading, setLoading] = useState(false);
 
     const [isEmployerWithData, setIsEmployerWithData] = useState(false);
+    const [isCandidateWithData, setIsCandidateWithData] = useState(false);
 
-    useEffect(() => {
-        if (user) {
-            // Tao bang sao tranh sua truc tiep context
-            setUserInfo({
-                ...user,
-                phone_number: user.profile?.phone_number || '',
-                address: user.profile?.address || '',
-                user_type: user.profile?.user_type || 'candidate',
-                avatar: { uri: user.avatar }
-            });
-        }
-
-        const checkEmployerData = async () => {
-            if (user && user.profile?.user_type === 'employer') {
-                try {
-                    const res = await authApis(user.access_token).get(endpoints['my-companies']);
-                    if (res.data.length > 0) {
-                        setIsEmployerWithData(true);
-                    }
-                } catch (ex) {
-                    console.error("Failed to check employer data:", ex);
-                }
+    useFocusEffect(
+        useCallback(() => {
+            // Cap nhat userInfo khi user context thay doi
+            if (user) {
+                setUserInfo({
+                    ...user,
+                    phone_number: user.profile?.phone_number || '',
+                    address: user.profile?.address || '',
+                    user_type: user.profile?.user_type || 'candidate',
+                    avatar: { uri: user.avatar }
+                });
             }
-        };
 
-        checkEmployerData();
-        
-    }, [user]);
+            const checkEmployerData = async () => {
+                if (user && user.profile?.user_type === 'employer') {
+                    try {
+                        const res = await authApis(user.access_token).get(endpoints['my-companies']);
+                        setIsEmployerWithData(res.data.length > 0);
+                    } catch (ex) {
+                        console.error("Failed to check employer data:", ex);
+                    }
+                } else {
+                    setIsEmployerWithData(false);
+                }
+            };
+
+            const checkCandidateData = async () => {
+                if (user && user.profile?.user_type === 'candidate') {
+                    try {
+                        const res = await authApis(user.access_token).get(endpoints['resumes']);
+                        setIsCandidateWithData(res.data.length > 0);
+                    } catch (ex) {
+                        console.error("Failed to check candidate data:", ex);
+                    }
+                } else {
+                    setIsCandidateWithData(false);
+                }
+            };
+
+            checkEmployerData();
+            checkCandidateData();
+
+        }, [user])
+    );
 
     const updateState = (field, value) => {
         setUserInfo(current => ({
@@ -86,7 +103,7 @@ const Profile = () => {
                 });
             }
 
-            // Gọi API bằng phương thức PATCH
+            // API goi bang phuong thuc PATCH nhung co ve chua hop ly ve mat logic
             const res = await authApis(user.access_token).patch(endpoints['current-user'], form, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
@@ -101,8 +118,8 @@ const Profile = () => {
             Alert.alert("Thành công", "Cập nhật thông tin thành công!");
 
         } catch (ex) {
-            console.log('Error:', ex.response.data);
-            Alert.alert("Error", "Co the ban nhap sai hoac thieu truong.");
+            const errorMessage = ex.response?.data?.user_type?.[0] || "Error updating profile";
+            Alert.alert("Error", errorMessage);
         } finally {
             setLoading(false);
         }
@@ -116,6 +133,8 @@ const Profile = () => {
     if (!userInfo) {
         return <ActivityIndicator style={MyStyles.margin} />;
     }
+
+    const isRoleChangeLocked = isEmployerWithData || isCandidateWithData;
 
     return (
         <ScrollView style={MyStyles.container}>
@@ -132,11 +151,13 @@ const Profile = () => {
             <TextInput label="Address" value={userInfo.address} onChangeText={(t) => updateState('address', t)} style={MyStyles.m} />
             
             <View style={MyStyles.m}>
-                <Text style={{marginBottom: 8, fontSize: 16}}>Vai trò của bạn:</Text>
-                {/* Hien thi Text neu la Employer co company */}
-                {isEmployerWithData ? (
+                <Text style={{marginBottom: 8, fontSize: 16}}>You are: </Text>
+
+                {isRoleChangeLocked ? (
                     <Text style={{ fontStyle: 'italic', color: 'gray' }}>
-                        Nhà tuyển dụng (Không thể thay đổi vì đã có dữ liệu công ty)
+                        {isEmployerWithData 
+                            ? "Employer (Cannot change because there is company data)"
+                            : "Candidate (Cannot change because there is resume data)"}
                     </Text>
                 ) : (
                     <RadioButton.Group onValueChange={newValue => updateState('user_type', newValue)} value={userInfo.user_type}>

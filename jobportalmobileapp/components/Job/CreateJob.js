@@ -1,9 +1,8 @@
-// components/Job/CreateJob.js
-
-import React, { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
-import { Button, TextInput, ActivityIndicator, Text } from 'react-native-paper';
+import { ActivityIndicator, Text } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
+import JobForm from './JobForm';
 import { MyUserContext } from '../../configs/Contexts';
 import { authApis, endpoints } from '../../configs/Apis';
 import MyStyles from '../../styles/MyStyles';
@@ -13,14 +12,7 @@ const CreateJob = () => {
     const user = useContext(MyUserContext);
     const nav = useNavigation();
     const route = useRoute();
-    const [job, setJob] = useState({
-        title: '',
-        description: '',
-        location: '',
-        salary: '',
-        job_type: 'full_time',
-        company: ''
-    });
+    const [selectedCompany, setSelectedCompany] = useState(null);
     const [myCompanies, setMyCompanies] = useState([]);
     const [loading, setLoading] = useState(false);
     const [loadingCompanies, setLoadingCompanies] = useState(true);
@@ -30,6 +22,9 @@ const CreateJob = () => {
             try {
                 let res = await authApis(user.access_token).get(endpoints['my-approved-companies']);
                 setMyCompanies(res.data);
+                if (res.data.length > 0) {
+                    setSelectedCompany(res.data[0].id);
+                }
             } catch (ex) {
                 console.log('Error: ', ex);
             } finally {
@@ -40,29 +35,28 @@ const CreateJob = () => {
         loadMyCompanies();
     }, []);
 
-    const updateState = (field, value) => {
-        setJob(current => ({ ...current, [field]: value }));
-    };
-
-    const submit = async () => {
-        if (!job.title || !job.company || !job.location || !job.salary) {
-            Alert.alert("Lỗi", "Vui lòng điền đầy đủ các trường bắt buộc.");
+    const handleCreateJob = async (jobData) => {
+        if (!selectedCompany) {
+            Alert.alert("Lỗi", "Vui lòng chọn một công ty.");
             return;
         }
 
         setLoading(true);
         try {
-            await authApis(user.access_token).post(endpoints['jobs'], job);
-            Alert.alert("Thành công", "Đăng tin tuyển dụng thành công!");
+            const dataToSend = {
+                ...jobData,
+                company: selectedCompany,
+                salary: parseInt(jobData.salary),
+                expiration_date: jobData.expiration_date || null
+            };
 
-            if (route.params?.onJobCreated) {
-                route.params.onJobCreated();
-            }
+            await authApis(user.access_token).post(endpoints['jobs'], dataToSend);
+            Alert.alert("Successfully", "Create job posting successfully.");
 
             nav.goBack();
         } catch (ex) {
-            console.log('Error: ', ex);
-            Alert.alert("Lỗi", "Có lỗi xảy ra khi đăng tin.");
+            console.log('Error creating job: ', ex.response.data);
+            Alert.alert("Error", "An error occurred while creating the job.");
         } finally {
             setLoading(false);
         }
@@ -73,30 +67,20 @@ const CreateJob = () => {
     }
 
     if (myCompanies.length === 0) {
-        return <View style={MyStyles.container}><Text style={MyStyles.m}>Bạn chưa có công ty nào được duyệt. Vui lòng tạo công ty và chờ duyệt.</Text></View>;
+        return <View style={MyStyles.container}><Text style={MyStyles.m}>You have no company approved. Please wait until we approve your companies.</Text></View>;
     }
 
     return (
-        <ScrollView style={MyStyles.container}>
-            <Text style={MyStyles.m}>Chọn công ty (*)</Text>
-            <Picker selectedValue={job.company} onValueChange={(itemValue) => updateState('company', itemValue)}>
-                <Picker.Item label="-- Chọn công ty --" value="" />
+        <ScrollView>
+            <Text style={MyStyles.m}>Choose company (*)</Text>
+            <Picker selectedValue={selectedCompany} onValueChange={(itemValue) => setSelectedCompany(itemValue)}>
                 {myCompanies.map(c => <Picker.Item key={c.id} label={c.name} value={c.id} />)}
             </Picker>
-
-            <TextInput label="Tiêu đề tin (*)" value={job.title} onChangeText={t => updateState('title', t)} style={MyStyles.m} />
-            <TextInput label="Mô tả" value={job.description} onChangeText={t => updateState('description', t)} style={MyStyles.m} multiline />
-            <TextInput label="Địa điểm (*)" value={job.location} onChangeText={t => updateState('location', t)} style={MyStyles.m} />
-            <TextInput label="Mức lương (*)" value={job.salary} onChangeText={t => updateState('salary', t)} style={MyStyles.m} keyboardType="numeric" />
-
-            <Text style={MyStyles.m}>Loại công việc</Text>
-            <Picker selectedValue={job.job_type} onValueChange={(itemValue) => updateState('job_type', itemValue)}>
-                <Picker.Item label="Toàn thời gian" value="full_time" />
-                <Picker.Item label="Bán thời gian" value="part_time" />
-                <Picker.Item label="Từ xa" value="remote" />
-            </Picker>
-
-            <Button loading={loading} disabled={loading} onPress={submit} mode="contained" style={MyStyles.m}>Đăng Tin</Button>
+            <JobForm
+                onSubmit={handleCreateJob}
+                submitButtonText="Create Job"
+                loading={loading}
+            />
         </ScrollView>
     );
 };

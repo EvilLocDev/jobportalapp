@@ -3,6 +3,7 @@ import { View, FlatList, Alert, ActivityIndicator, StyleSheet } from 'react-nati
 import { Text, Button, Card, IconButton, TextInput } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
+import * as WebBrowser from 'expo-web-browser';
 import { MyUserContext } from '../../configs/Contexts';
 import { authApis, endpoints } from '../../configs/Apis';
 import UpdateResumeModal from './UpdateResumeModal';
@@ -115,6 +116,15 @@ const ResumeManagement = () => {
         }
     };
 
+    const handleViewResume = async (fileUrl) => {
+        if (!fileUrl) {
+            Alert.alert("Error", "Cannot see resume.");
+            return;
+        }
+        await WebBrowser.openBrowserAsync(fileUrl);
+        console.log("Opened resume URL:", fileUrl);
+    };
+
     const handleOpenUpdateModal = (resumeId) => {
         setSelectedResumeId(resumeId);
         setIsUpdateModalVisible(true);
@@ -127,6 +137,11 @@ const ResumeManagement = () => {
                 subtitle={item.is_default ? "Default" : null}
                 right={() => (
                     <View style={styles.cardActions}>
+                        <IconButton 
+                            icon="eye" 
+                            iconColor="blue"
+                            onPress={() => handleViewResume(item.file)} 
+                        />
                         <IconButton 
                             icon="pencil" 
                             iconColor="green" 

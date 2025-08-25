@@ -26,7 +26,7 @@ const CreateCompany = () => {
     const pickLogo = async () => {
         let { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert("Quyền truy cập", "Bạn cần cấp quyền để chọn ảnh.");
+            Alert.alert("Permission", "You need permission to pick image.");
         } else {
             const result = await ImagePicker.launchImageLibraryAsync();
             if (!result.canceled) {
@@ -59,11 +59,11 @@ const CreateCompany = () => {
             await authApis(user.access_token).post(endpoints['companies'], form, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            Alert.alert("Thành công", "Tạo công ty thành công! Vui lòng chờ admin duyệt.");
+            Alert.alert("Successfully", "Create company successfully. Please wait for admin approval.");
             nav.goBack(); 
         } catch (ex) {
-            console.log('Error: ', ex);
-            Alert.alert("Lỗi", "Có lỗi xảy ra khi tạo công ty.");
+            console.error("Error creating company:", ex.response.data);
+            Alert.alert("Error: ", errorMessages || "Error creating company.");
         } finally {
             setLoading(false);
         }

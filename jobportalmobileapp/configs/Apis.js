@@ -11,6 +11,7 @@ export const endpoints = {
     'companies': '/companies/',
     'jobs': '/jobs/',
     'job-details': (jobId) => `/jobs/${jobId}/`,
+    'company-details': (companyId) => `/companies/${companyId}/`,
     'save-job': (jobId) => `/jobs/${jobId}/save-job/`,
     'saved-jobs': '/users/saved-jobs/',
     'apply-job': (jobId) => `/jobs/${jobId}/applications/`,
