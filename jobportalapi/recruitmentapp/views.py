@@ -1,4 +1,4 @@
-from django.db.models import OuterRef, Exists
+from django.db.models import Q, OuterRef, Exists
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -7,6 +7,7 @@ from . import perms
 from . import serializers, paginators
 from rest_framework import viewsets, generics, parsers, permissions, status
 from .models import User, Profile, Resume, Company, Job, SaveJob, Application
+from django.utils import timezone
 
 class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
     queryset = User.objects.select_related('profile').filter(profile__active=True)
@@ -120,7 +121,7 @@ class ResumeViewSet(viewsets.ModelViewSet):
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.filter(active=True)
     serializer_class = serializers.CompanySerializer
-    parser_classes = [parsers.MultiPartParser]
+    parser_classes = [parsers.MultiPartParser, parsers.JSONParser, parsers.FormParser]
 
     def get_serializer_class(self):
         if self.action in ['retrieve', 'create', 'update', 'partial_update']:
@@ -139,18 +140,23 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-
         my_companies_param = self.request.query_params.get('my_companies')
 
         if my_companies_param and my_companies_param.lower() == 'true':
             if perms.IsEmployer().has_permission(self.request, self):
-                return self.queryset.filter(user=user).order_by('-created_date')
+                query = self.queryset.filter(user=user)
+
+                status_param = self.request.query_params.get('status')
+                if status_param:
+                    query = query.filter(status=status_param)
+
+                return query.order_by('-created_date')
             else:
                 return self.queryset.none()
 
         query = self.queryset.filter(status='approved')
 
-        if user.is_authenticated and (user.is_staff or user.is_superuser):
+        if perms.IsAdmin().has_permission(self.request, self):
             return self.queryset.order_by('-created_date')
 
         return query
@@ -185,13 +191,16 @@ class CompanyViewSet(viewsets.ModelViewSet):
         jobs = company.job_set.filter(active=True)
         return Response(serializers.JobSerializer(jobs, many=True).data)
 
-class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIView, generics.CreateAPIView):
+class JobViewSet(viewsets.ModelViewSet): # Du CRUD
     # jobs/<id>/
     queryset = Job.objects.select_related('company').filter(active=True) # Lay nhieu job thuoc mot cong ty
     serializer_class = serializers.JobDetailSerializer
     pagination_class = paginators.ItemPaginator
 
     def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [perms.IsJobOwner()]
+
         if self.action == 'create':
             return [perms.IsEmployer()]
 
@@ -208,8 +217,13 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
 
     def get_queryset(self):
         query = self.queryset
-        user = self.request.user
 
+        # Loc cac job chua het han
+        query = query.filter(
+            Q(expiration_date__gte=timezone.now().date()) | Q(expiration_date__isnull=True)
+        )
+
+        user = self.request.user
         if user.is_authenticated:
             saved_jobs_subquery = SaveJob.objects.filter(
                 user=user,
@@ -231,7 +245,7 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
         return query
 
     def get_serializer_class(self):
-        if self.action == 'create':
+        if self.action in ['create', 'update', 'partial_update']:
             return serializers.JobCreateUpdateSerializer
         return serializers.JobDetailSerializer
 
@@ -254,7 +268,7 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
             sa.active = not sa.active
         sa.save()
 
-        return Response(serializers.JobDetailSerializer(self.get_object(), context={'request': request}).data)
+        return Response(serializers.JobDetailSerializer(self.get_queryset().get(pk=pk), context={'request': request}).data)
 
     # /jobs/<id>/applications/
     @action(methods=['get', 'post'], detail=True, url_path='applications')
@@ -262,11 +276,9 @@ class JobViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIVie
         job = self.get_object()
 
         if request.method == 'POST':
-            # Kiểm tra trước để tránh truy vấn DB không cần thiết
             if Application.objects.filter(job=job, candidate=request.user).exists():
                 return Response({'detail': 'Bạn đã ứng tuyển công việc này rồi.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Truyền context vào serializer
             serializer = serializers.ApplicationSerializer(data=request.data, context={'request': request, 'job': job})
             if serializer.is_valid(raise_exception=True):
                 serializer.save(candidate=request.user, job=job)  # Truyền các giá trị read-only vào hàm save

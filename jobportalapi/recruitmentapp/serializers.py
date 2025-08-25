@@ -79,6 +79,12 @@ class UserDetailSerializer(UserSerializer):
                         "user_type": "Bạn không thể đổi vai trò thành Candidate vì bạn đã tạo công ty. Vui lòng liên hệ hỗ trợ."
                     })
 
+            elif profile_instance.user_type == 'candidate' and new_user_type == 'employer':
+                if instance.resume_set.exists():
+                    raise serializers.ValidationError({
+                        "user_type": "Bạn không thể đổi vai trò thành Employer vì bạn đã tạo resume. Vui lòng liên hệ hỗ trợ."
+                    })
+
             for attr, value in profile_data.items():
                 setattr(profile_instance, attr, value)
             profile_instance.save()
@@ -86,6 +92,11 @@ class UserDetailSerializer(UserSerializer):
         return user_instance
 
 class ResumeSerializer(ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['file'] = instance.file.url if instance.file else ''
+        return data
+
     class Meta:
         model = Resume
         fields = ['id','candidate_id', 'title', 'file', 'created_date', 'is_default']
@@ -109,7 +120,7 @@ class CompanyDetailSerializer(CompanySerializer):
 class JobSerializer(ModelSerializer):
     class Meta:
         model = Job
-        fields = ['id', 'company_id', 'title', 'salary', 'job_type', 'created_date']
+        fields = ['id', 'company_id', 'title', 'salary', 'job_type', 'created_date', 'expiration_date']
 
 class JobCreateUpdateSerializer(ModelSerializer):
     # client chi can gui company_id
@@ -117,7 +128,7 @@ class JobCreateUpdateSerializer(ModelSerializer):
 
     class Meta:
         model = Job
-        fields = ['company', 'title', 'description', 'location', 'salary', 'job_type']
+        fields = ['company', 'title', 'description', 'location', 'salary', 'job_type', 'expiration_date']
 
 class JobDetailSerializer(JobSerializer):
     company = CompanySerializer()
@@ -125,7 +136,7 @@ class JobDetailSerializer(JobSerializer):
 
     class Meta:
         model = JobSerializer.Meta.model
-        fields = JobSerializer.Meta.fields + ['description', 'location', 'company', 'is_saved']
+        fields = JobSerializer.Meta.fields + ['description', 'location', 'company', 'is_saved', 'expiration_date']
 
 
 class ApplicationSerializer(ModelSerializer):
