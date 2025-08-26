@@ -17,6 +17,7 @@ export const endpoints = {
     'apply-job': (jobId) => `/jobs/${jobId}/applications/`,
 
     'my-companies': '/companies/?my_companies=true',
+    'my-jobs': (companyId) => `/jobs/?my_jobs=true&company_id=${companyId}`,
     'my-approved-companies': '/companies/?my_companies=true&status=approved',
     'company-jobs': (companyId) => `/companies/${companyId}/jobs/`,
     

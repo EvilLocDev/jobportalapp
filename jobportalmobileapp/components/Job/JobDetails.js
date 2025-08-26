@@ -31,7 +31,7 @@ const JobDetails = ({ route }) => {
             let res = await api.get(endpoints['job-details'](jobId));
             setJob(res.data);
         } catch (ex) {
-            console.error("Failed to load job details:", ex);
+            console.log("Failed to load job details:", ex);
         }
     }
 

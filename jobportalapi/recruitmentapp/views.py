@@ -198,6 +198,9 @@ class JobViewSet(viewsets.ModelViewSet): # Du CRUD
     pagination_class = paginators.ItemPaginator
 
     def get_permissions(self):
+        if self.action == 'retrieve':
+            return [perms.IsJobOwnerOrActive()]
+
         if self.action in ['update', 'partial_update', 'destroy']:
             return [perms.IsJobOwner()]
 
@@ -217,11 +220,19 @@ class JobViewSet(viewsets.ModelViewSet): # Du CRUD
 
     def get_queryset(self):
         query = self.queryset
+        user = self.request.user
+
+        my_jobs_param = self.request.query_params.get('my_jobs')
+
+        # Job cua employer
+        if user.is_authenticated and my_jobs_param and my_jobs_param.lower() == 'true':
+            return query.filter(company__user=user).order_by('-created_date')
 
         # Loc cac job chua het han
-        query = query.filter(
-            Q(expiration_date__gte=timezone.now().date()) | Q(expiration_date__isnull=True)
-        )
+        if self.action == 'list':
+            query = query.filter(
+                Q(expiration_date__gte=timezone.now().date()) | Q(expiration_date__isnull=True)
+            )
 
         user = self.request.user
         if user.is_authenticated:

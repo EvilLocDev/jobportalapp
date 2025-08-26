@@ -1,4 +1,5 @@
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from .models import User, Profile, Resume, Company, Job, Application, SaveJob
@@ -133,10 +134,16 @@ class JobCreateUpdateSerializer(ModelSerializer):
 class JobDetailSerializer(JobSerializer):
     company = CompanySerializer()
     is_saved = serializers.BooleanField(read_only=True)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = JobSerializer.Meta.model
-        fields = JobSerializer.Meta.fields + ['description', 'location', 'company', 'is_saved', 'expiration_date']
+        fields = JobSerializer.Meta.fields + ['description', 'location', 'company', 'is_saved', 'expiration_date', 'status']
+
+    def get_status(self, job):
+        if job.expiration_date and job.expiration_date < timezone.now().date():
+            return 'expired'
+        return 'active'
 
 
 class ApplicationSerializer(ModelSerializer):
