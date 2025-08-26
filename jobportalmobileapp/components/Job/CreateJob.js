@@ -37,7 +37,7 @@ const CreateJob = () => {
 
     const handleCreateJob = async (jobData) => {
         if (!selectedCompany) {
-            Alert.alert("Lỗi", "Vui lòng chọn một công ty.");
+            Alert.alert("Error", "Please choose company.");
             return;
         }
 

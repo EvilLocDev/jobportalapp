@@ -43,11 +43,7 @@ const EditJob = () => {
         try {
             await authApis(user.access_token).patch(endpoints['job-details'](jobId), data);
             Alert.alert("Successfully", "Successfully update job!");
-
-            // Call callback function to refresh job list in previous screen
-            if (route.params?.onActionSuccess) {
-                route.params.onActionSuccess();
-            }
+            
 
             nav.goBack();
         } catch (ex) {

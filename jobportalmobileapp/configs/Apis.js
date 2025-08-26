@@ -19,7 +19,6 @@ export const endpoints = {
     'my-companies': '/companies/?my_companies=true',
     'my-approved-companies': '/companies/?my_companies=true&status=approved',
     'company-jobs': (companyId) => `/companies/${companyId}/jobs/`,
-    
 
     'login': '/o/token/',
     'register': '/users/',
