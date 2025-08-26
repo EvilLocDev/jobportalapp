@@ -16,8 +16,8 @@ class BaseModel(models.Model):
 
 class Profile(BaseModel):
     USER_TYPE_CHOICES = (
-        ('candidate', 'Ứng viên'),
-        ('employer', 'Nhà tuyển dụng'),
+        ('candidate', 'Candidate'),
+        ('employer', 'Employer'),
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -65,9 +65,9 @@ class Company(BaseModel):
 
 class Job(BaseModel):
     JOB_TYPE_CHOICES = (
-        ('full_time', 'Toàn thời gian'),
-        ('part_time', 'Bán thời gian'),
-        ('remote', 'Từ xa'),
+        ('full_time', 'Full-time'),
+        ('part_time', 'Part-time'),
+        ('remote', 'Remote'),
     )
 
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -86,10 +86,11 @@ class Job(BaseModel):
 
 class Application(BaseModel):
     STATUS_CHOICES = (
-        ('pending', 'Đang chờ'),
-        ('reviewed', 'Đã xem'),
-        ('rejected', 'Từ chối'),
-        ('accepted', 'Chấp nhận'),
+        ('pending', 'Pending'),
+        ('reviewed', 'Reviewed'),
+        ('rejected', 'Rejected'),
+        ('accepted', 'Accepted'),
+        ('withdrawn', 'Withdrawn')
     )
 
     job = models.ForeignKey(Job, on_delete=models.CASCADE)

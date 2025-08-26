@@ -145,21 +145,42 @@ class JobDetailSerializer(JobSerializer):
             return 'expired'
         return 'active'
 
-
 class ApplicationSerializer(ModelSerializer):
+    job = JobDetailSerializer(read_only=True)
+    candidate = UserSerializer(read_only=True)
+    resume = ResumeSerializer(read_only=True) # Doc
+
+    resume_id = serializers.PrimaryKeyRelatedField( # Ghi
+        queryset=Resume.objects.all(), source='resume', write_only=True
+    )
+
     class Meta:
         model = Application
-        fields = ['id', 'resume', 'status', 'created_date', 'candidate', 'job']
+        fields = ['id', 'resume', 'resume_id', 'status', 'created_date', 'candidate', 'job']
         read_only_fields = ['candidate', 'job', 'status']
 
-    def validate_resume(self, resume):
+    def validate_resume_id(self, resume):
         request = self.context.get('request')
         if not request or not hasattr(request, 'user'):
             return resume
 
         if resume.candidate != request.user:
-            raise serializers.ValidationError("Bạn không thể sử dụng CV này.")
+            raise serializers.ValidationError("You have not permission to use this resume.")
         return resume
+
+class ApplicationUpdateSerializer(ModelSerializer):
+    class Meta:
+        model = Application
+        fields = ['status']
+        extra_kwargs = {
+            'status': {'read_only': False}
+        }
+
+    def validate_status(self, value):
+        if value == 'withdrawn':
+            raise serializers.ValidationError("You have not permission to withdrawn this application.")
+        return value
+
 
 class SaveJobSerializer(ModelSerializer):
     job = JobSerializer()

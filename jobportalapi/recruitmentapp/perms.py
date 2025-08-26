@@ -40,3 +40,11 @@ class IsJobOwnerOrActive(permissions.BasePermission):
         is_owner = request.user == obj.company.user
 
         return not is_expired or is_owner
+
+class IsApplicationOwner(permissions.IsAuthenticated):
+    def has_object_permission(self, request, view, application):
+        return application.candidate == request.user
+
+class IsApplicationJobOwner(permissions.IsAuthenticated):
+    def has_object_permission(self, request, view, application):
+        return application.job.company.user == request.user

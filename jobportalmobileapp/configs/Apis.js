@@ -27,8 +27,13 @@ export const endpoints = {
     'current-user': '/users/current-user/',
     'change-password': '/users/change-password/',
 
-    'application-details': (applicationId) => `/applications/${applicationId}`,
-
+    'apply-job': (jobId) => `/jobs/${jobId}/applications/`,
+    'job-applications': (jobId) => `/jobs/${jobId}/applications/`,
+    'application-details': (applicationId) => `/applications/${applicationId}/`,
+    'update-application-status': (applicationId) => `/applications/${applicationId}/update-status/`,
+    'review-application': (applicationId) => `/applications/${applicationId}/review/`,
+    'withdraw-application': (applicationId) => `/applications/${applicationId}/withdraw/`,
+    'my-applications': '/applications/',
 };
 
 export const authApis = (token) => {

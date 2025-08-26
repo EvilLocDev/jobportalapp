@@ -176,14 +176,25 @@ const Profile = () => {
             <Button loading={loading} disabled={loading} onPress={updateUserProfile} mode="contained" style={MyStyles.m}>Update</Button>
 
             {user && user.profile?.user_type === 'candidate' && (
-                <Button 
-                    icon="file-document-multiple" 
-                    mode="contained-tonal" 
-                    onPress={() => nav.navigate('ResumeManagement')}
-                    style={MyStyles.m}
-                >
-                    CV Management
-                </Button>
+                <>
+                    <Button 
+                        icon="file-document-multiple" 
+                        mode="contained-tonal" 
+                        onPress={() => nav.navigate('ResumeManagement')}
+                        style={MyStyles.m}
+                    >
+                        Resume Management
+                    </Button>
+
+                    <Button 
+                        icon="clipboard-text-clock" 
+                        mode="contained-tonal" 
+                        onPress={() => nav.navigate('MyApplications')}
+                        style={MyStyles.m}
+                    >
+                        My Applications
+                    </Button>
+                </>
             )}
 
             <Button 

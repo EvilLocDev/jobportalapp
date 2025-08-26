@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Modal, Alert, ActivityIndicator, FlatList, TouchableOpacity } from 'react-native';
 import { Button, Text, RadioButton, Divider } from 'react-native-paper';
-import { MyUserContext } from '../../configs/Contexts';
+import { MyUserContext, MyApplicationsDispatchContext } from '../../configs/Contexts';
 import { authApis, endpoints } from '../../configs/Apis';
 import Styles from "./Styles";
 
 const ApplyJob = ({ visible, onClose, jobId, jobTitle, navigation }) => {
     const user = useContext(MyUserContext);
+    const myApplicationsDispatch = useContext(MyApplicationsDispatchContext);
     const [resumes, setResumes] = useState([]);
     const [selectedResume, setSelectedResume] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -25,7 +26,7 @@ const ApplyJob = ({ visible, onClose, jobId, jobTitle, navigation }) => {
             console.log("Fetching resumes for user:", user);
             const res = await api.get(endpoints['resumes']);
             setResumes(res.data);
-            // Automatically select the default resume if available
+
             const defaultResume = res.data.find(r => r.is_default);
             if (defaultResume) {
                 setSelectedResume(defaultResume.id);
@@ -33,7 +34,7 @@ const ApplyJob = ({ visible, onClose, jobId, jobTitle, navigation }) => {
 
         } catch (ex) {
             console.log("Failed to load resumes:", ex);
-            Alert.alert("Lỗi", "Không thể tải danh sách CV của bạn.");
+            Alert.alert("Error", "Cannot load your resumes.");
         } finally {
             setLoading(false);
         }
@@ -41,22 +42,27 @@ const ApplyJob = ({ visible, onClose, jobId, jobTitle, navigation }) => {
 
     const handleApply = async () => {
         if (!selectedResume) {
-            Alert.alert("Thông báo", "Vui lòng chọn một CV để ứng tuyển.");
+            Alert.alert("Error", "Please choose your resume to apply.");
             return;
         }
 
         setSubmitting(true);
         try {
             const api = authApis(user.access_token);
-            await api.post(endpoints['apply-job'](jobId), {
-                resume: selectedResume
+            
+            const res = await api.post(endpoints['apply-job'](jobId), {
+                resume_id: selectedResume
             });
+            
+            if (res.status === 201) {
+                myApplicationsDispatch({ type: "add", payload: res.data });
+            }
 
-            Alert.alert("Thành công", "Bạn đã ứng tuyển thành công!");
-            onClose(); // Đóng modal sau khi nộp thành công
+            Alert.alert("Successfully", "You apply this job successfully!");
+            onClose();
         } catch (ex) {
-            console.log("Error applying for job:", ex);
-            Alert.alert("Lỗi", "Đã xảy ra lỗi khi ứng tuyển. Có thể bạn đã ứng tuyển công việc này rồi.");
+            console.log("Error applying for job:", ex.response || ex);
+            Alert.alert("Error", "You have an error because can be there an application before.");
         } finally {
             setSubmitting(false);
         }
@@ -69,8 +75,8 @@ const ApplyJob = ({ visible, onClose, jobId, jobTitle, navigation }) => {
 
     const renderEmpty = () => (
         <View style={{alignItems: 'center'}}>
-            <Text>Bạn chưa có CV. Vui lòng tạo CV trong hồ sơ.</Text>
-            <Button onPress={navigateToResumeManagement}>Đi đến trang quản lý CV</Button>
+            <Text>You have not resume. Please create resume in your profile</Text>
+            <Button onPress={navigateToResumeManagement}>Go to Resume Management</Button>
         </View>
     );
 
@@ -81,7 +87,7 @@ const ApplyJob = ({ visible, onClose, jobId, jobTitle, navigation }) => {
                 status={selectedResume === item.id ? 'checked' : 'unchecked'}
                 onPress={() => setSelectedResume(item.id)}
             />
-            <Text>{item.title} {item.is_default && "(Mặc định)"}</Text>
+            <Text>{item.title} {item.is_default && "(Default)"}</Text>
         </TouchableOpacity>
     );
 

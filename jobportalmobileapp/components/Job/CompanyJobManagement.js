@@ -47,6 +47,7 @@ const CompanyJobManagement = () => {
                     try {
                         await authApis(user.access_token).delete(endpoints['job-details'](jobId));
                         setJobs(jobs.filter(j => j.id !== jobId));
+                        Alert.alert("Successfully", "Delete job successfully.");
                     } catch (ex) {
                         console.log("Error when delete job: ", ex);
                         Alert.alert("Error", "Cannot delete this job.");
@@ -90,7 +91,7 @@ const CompanyJobManagement = () => {
                                 <Card.Title
                                     title={item.title}
                                     subtitle={`Salary: ${item.salary}`}
-
+                                    titleStyle={{fontWeight: 'bold'}}
                                     right={(props) => (
                                         <Chip 
                                             {...props} 
@@ -103,6 +104,9 @@ const CompanyJobManagement = () => {
                                 />
                             </TouchableOpacity>
                             <Card.Actions>
+                                <Button icon="account-group" mode="contained" onPress={() => nav.navigate('Applications', { jobId: item.id, jobTitle: item.title })}>
+                                    Candidates
+                                </Button>
                                 <Button onPress={() => nav.navigate('EditJob', { jobId: item.id })}>Edit</Button>
                                 <Button onPress={() => handleDeleteJob(item.id)} textColor='red'>Delete</Button>
                             </Card.Actions>
@@ -128,6 +132,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         paddingVertical: 8,
         backgroundColor: '#f5f5f5',
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd',
     },
     chip: {
         marginRight: 16,
