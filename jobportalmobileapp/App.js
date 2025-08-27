@@ -1,9 +1,10 @@
-import { useContext, useReducer, useEffect } from "react"; // Thêm useEffect
+import { useContext, useReducer, useEffect } from "react";
 
-import { MyDispatchContext, MyUserContext, SavedJobsContext, SavedJobsDispatchContext } from "./configs/Contexts";
+import { MyDispatchContext, MyUserContext, SavedJobsContext, SavedJobsDispatchContext, MyApplicationsContext, MyApplicationsDispatchContext } from "./configs/Contexts";
 import MyUserReducer from "./reducers/MyUserReducer";
 import SavedJobsReducer from "./reducers/SavedJobsReducer";
-import { authApis, endpoints } from "./configs/Apis"; // Import authApis và endpoints
+import MyApplicationsReducer from "./reducers/MyApplicationsReducer";
+import { authApis, endpoints } from "./configs/Apis";
 
 import Home from "./components/Home/Home";
 import Login from "./components/User/Login";
@@ -13,6 +14,10 @@ import ChangePassword from "./components/User/ChangePassword";
 import JobDetails from "./components/Job/JobDetails";
 import SaveJobs from "./components/User/SaveJobs";
 import ResumeManagement from "./components/Resume/ResumeManagement";
+
+import Applications from "./components/Application/Applications";
+import ApplicationDetails from "./components/Application/ApplicationDetails";
+import MyApplications from "./components/Application/MyApplications";
 
 import CreateCompany from "./components/Company/CreateCompany";
 import CreateJob from "./components/Job/CreateJob";
@@ -36,9 +41,10 @@ const EmployerStack = createNativeStackNavigator();
 const ProfileStackNavigator = () => {
     return (
         <ProfileStack.Navigator>
-            <ProfileStack.Screen name="ProfileInfo" component={Profile} options={{ title: "Thông tin cá nhân" }} />
-            <ProfileStack.Screen name="ChangePassword" component={ChangePassword} options={{ title: "Đổi mật khẩu" }} />
-            <ProfileStack.Screen name="ResumeManagement" component={ResumeManagement} options={{ title: "Quản lý CV" }} />
+            <ProfileStack.Screen name="ProfileInfo" component={Profile} options={{ title: "Personal infomation" }} />
+            <ProfileStack.Screen name="ChangePassword" component={ChangePassword} options={{ title: "Change password" }} />
+            <ProfileStack.Screen name="ResumeManagement" component={ResumeManagement} options={{ title: "Resume management" }} />
+            <ProfileStack.Screen name="MyApplications" component={MyApplications} options={{ title: "Jobs applied" }} />
         </ProfileStack.Navigator>
     );
 }
@@ -49,12 +55,12 @@ const EmployerStackNavigator = () => {
             <EmployerStack.Screen 
                 name="MyCompanies" 
                 component={MyCompanies} 
-                options={{ title: "Quản lý công ty" }} 
+                options={{ title: "Company Management" }} 
             />
             <EmployerStack.Screen 
                 name="CreateCompany" 
                 component={CreateCompany} 
-                options={{ title: "Tạo Công Ty Mới" }} 
+                options={{ title: "Create New Company" }} 
             />
             <EmployerStack.Screen 
                 name="EditCompany" 
@@ -64,12 +70,12 @@ const EmployerStackNavigator = () => {
             <EmployerStack.Screen 
                 name="CompanyJobManagement" 
                 component={CompanyJobManagement} 
-                options={({ route }) => ({ title: `Việc làm tại ${route.params?.companyName}` })}
+                options={({ route }) => ({ title: `Job at ${route.params?.companyName}` })}
             />
             <EmployerStack.Screen 
                 name="CreateJob" 
                 component={CreateJob} 
-                options={{ title: "Đăng Tin Mới" }} 
+                options={{ title: "Create new Job" }} 
             />
             <EmployerStack.Screen 
                 name="EditJob" 
@@ -79,7 +85,17 @@ const EmployerStackNavigator = () => {
             <EmployerStack.Screen 
                 name="EmployerJobDetail"
                 component={JobDetails}
-                options={{ title: "Chi Tiết Công Việc" }} 
+                options={{ title: "Job Details" }} 
+            />
+            <EmployerStack.Screen 
+                name="Applications"
+                component={Applications}
+                options={({ route }) => ({ title: `Candidate for: ${route.params?.jobTitle}` })}
+            />
+            <EmployerStack.Screen 
+                name="ApplicationDetails"
+                component={ApplicationDetails}
+                options={{ title: "Application Details" }} 
             />
         </EmployerStack.Navigator>
     );
@@ -149,6 +165,7 @@ const TabNavigator = () => {
 const App = () => {
     const [user, dispatch] = useReducer(MyUserReducer, null);
     const [savedJobs, savedJobsDispatch] = useReducer(SavedJobsReducer, []);
+    const [myApplications, myApplicationsDispatch] = useReducer(MyApplicationsReducer, []);
 
     console.log("App user state:", user);
 
@@ -163,15 +180,31 @@ const App = () => {
                     payload: jobs
                 });
             } catch (ex) {
-                console.error("Lỗi khi tải danh sách việc đã lưu:", ex);
+                console.log("Error when loading job saved:", ex);
                 savedJobsDispatch({ type: "set", payload: [] });
+            }
+        };
+
+        const loadMyApplications = async () => {
+            if (user?.profile?.user_type === 'candidate') {
+                try {
+                    let res = await authApis(user.access_token).get(endpoints['my-applications']);
+                    myApplicationsDispatch({
+                        type: "set",
+                        payload: res.data
+                    });
+                } catch (ex) {
+                    console.log("Error when loading applied list:", ex);
+                }
             }
         };
 
         if (user) {
             loadSavedJobs();
+            loadMyApplications();
         } else {
             savedJobsDispatch({ type: "set", payload: [] });
+            myApplicationsDispatch({ type: "set", payload: [] });
         }
     }, [user]);
 
@@ -182,9 +215,16 @@ const App = () => {
 
                     <SavedJobsContext.Provider value={savedJobs}>
                         <SavedJobsDispatchContext.Provider value={savedJobsDispatch}>
-                            <NavigationContainer>
-                                <TabNavigator />
-                            </NavigationContainer>
+
+                            <MyApplicationsContext.Provider value={myApplications}>
+                                <MyApplicationsDispatchContext.Provider value={myApplicationsDispatch}>
+
+                                    <NavigationContainer>
+                                        <TabNavigator />
+                                    </NavigationContainer>
+
+                                </MyApplicationsDispatchContext.Provider>
+                            </MyApplicationsContext.Provider>
                         </SavedJobsDispatchContext.Provider>
                     </SavedJobsContext.Provider>
 

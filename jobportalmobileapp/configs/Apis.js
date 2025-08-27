@@ -17,6 +17,7 @@ export const endpoints = {
     'apply-job': (jobId) => `/jobs/${jobId}/applications/`,
 
     'my-companies': '/companies/?my_companies=true',
+    'my-jobs': (companyId) => `/jobs/?my_jobs=true&company_id=${companyId}`,
     'my-approved-companies': '/companies/?my_companies=true&status=approved',
     'company-jobs': (companyId) => `/companies/${companyId}/jobs/`,
 
@@ -25,8 +26,13 @@ export const endpoints = {
     'current-user': '/users/current-user/',
     'change-password': '/users/change-password/',
 
-    'application-details': (applicationId) => `/applications/${applicationId}`,
-
+    'apply-job': (jobId) => `/jobs/${jobId}/applications/`,
+    'job-applications': (jobId) => `/jobs/${jobId}/applications/`,
+    'application-details': (applicationId) => `/applications/${applicationId}/`,
+    'update-application-status': (applicationId) => `/applications/${applicationId}/update-status/`,
+    'review-application': (applicationId) => `/applications/${applicationId}/review/`,
+    'withdraw-application': (applicationId) => `/applications/${applicationId}/withdraw/`,
+    'my-applications': '/applications/',
 };
 
 export const authApis = (token) => {

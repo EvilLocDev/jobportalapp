@@ -56,10 +56,11 @@ const Home = () => {
                 setPage(0); // Đặt page = 0 để không load thêm nữa
 
         } catch (ex) {
+            console.log("Error loading jobs:", ex.response);
             if (ex.response && ex.response.status === 404) {
                 setPage(0); // Dừng lại nếu API báo 404 (hết dữ liệu)
             }
-            console.error(ex);
+            console.log('Page not found: ',ex.response);
         } finally {
             setLoading(false);
         }

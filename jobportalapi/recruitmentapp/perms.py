@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import permissions
 
 class IsAdmin(permissions.IsAuthenticated):
@@ -31,3 +32,19 @@ class IsCompanyOwner(permissions.IsAuthenticated):
 class IsJobOwner(permissions.IsAuthenticated):
     def has_object_permission(self, request, view, job):
         return request.user == job.company.user
+
+class IsJobOwnerOrActive(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        # obj ở đây là một instance của Job
+        is_expired = obj.expiration_date and obj.expiration_date < timezone.now().date()
+        is_owner = request.user == obj.company.user
+
+        return not is_expired or is_owner
+
+class IsApplicationOwner(permissions.IsAuthenticated):
+    def has_object_permission(self, request, view, application):
+        return application.candidate == request.user
+
+class IsApplicationJobOwner(permissions.IsAuthenticated):
+    def has_object_permission(self, request, view, application):
+        return application.job.company.user == request.user

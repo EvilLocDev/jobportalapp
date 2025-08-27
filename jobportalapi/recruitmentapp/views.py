@@ -1,6 +1,6 @@
 from django.db.models import Q, OuterRef, Exists
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.response import Response
 
 from . import perms
@@ -198,6 +198,9 @@ class JobViewSet(viewsets.ModelViewSet): # Du CRUD
     pagination_class = paginators.ItemPaginator
 
     def get_permissions(self):
+        if self.action == 'retrieve':
+            return [perms.IsJobOwnerOrActive()]
+
         if self.action in ['update', 'partial_update', 'destroy']:
             return [perms.IsJobOwner()]
 
@@ -217,11 +220,19 @@ class JobViewSet(viewsets.ModelViewSet): # Du CRUD
 
     def get_queryset(self):
         query = self.queryset
+        user = self.request.user
+
+        my_jobs_param = self.request.query_params.get('my_jobs')
+
+        # Job cua employer
+        if user.is_authenticated and my_jobs_param and my_jobs_param.lower() == 'true':
+            return query.filter(company__user=user).order_by('-created_date')
 
         # Loc cac job chua het han
-        query = query.filter(
-            Q(expiration_date__gte=timezone.now().date()) | Q(expiration_date__isnull=True)
-        )
+        if self.action == 'list':
+            query = query.filter(
+                Q(expiration_date__gte=timezone.now().date()) | Q(expiration_date__isnull=True)
+            )
 
         user = self.request.user
         if user.is_authenticated:
@@ -277,7 +288,7 @@ class JobViewSet(viewsets.ModelViewSet): # Du CRUD
 
         if request.method == 'POST':
             if Application.objects.filter(job=job, candidate=request.user).exists():
-                return Response({'detail': 'Bạn đã ứng tuyển công việc này rồi.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': 'You applied this job.'}, status=status.HTTP_400_BAD_REQUEST)
 
             serializer = serializers.ApplicationSerializer(data=request.data, context={'request': request, 'job': job})
             if serializer.is_valid(raise_exception=True):
@@ -290,40 +301,105 @@ class JobViewSet(viewsets.ModelViewSet): # Du CRUD
 
 class ApplicationViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIView):
     # /applications/<id>
-    queryset = Application.objects.select_related('candidate').filter(active=True)
+    queryset = Application.objects.select_related('candidate', 'job__company').filter(active=True)
     serializer_class = serializers.ApplicationSerializer
 
+    def get_permissions(self):
+        if self.action == 'retrieve':
+            return [permissions.IsAuthenticated(), (perms.IsApplicationOwner | perms.IsApplicationJobOwner)()]
+        if self.action == 'update_status':
+            return [perms.IsApplicationJobOwner()]
+        if self.action == 'withdraw':
+            return [perms.IsApplicationOwner()]
+        return [permissions.IsAuthenticated()]
+
     def get_queryset(self):
-        query = self.queryset
+        user = self.request.user
+        queryset = super().get_queryset()
 
-        # /applications/?q=<keyword>
-        q = self.request.query_params.get('q')
-        if q:
-            query = query.filter(status__icontains=q)
+        if not user.is_authenticated:
+            return Application.objects.none()
 
-        # /applications/?job_id=<id>
-        job_id = self.request.query_params.get('job_id')
-        if job_id:
-            query = query.filter(job_id=job_id)
+        profile = getattr(user, 'profile', None)
+        if not profile:
+            return Application.objects.none()
 
-        return query
+        if profile.user_type == 'candidate':
+            return queryset.filter(candidate=user)
+        elif profile.user_type == 'employer':
+            return queryset.filter(job__company__user=user)
+        elif user.is_staff:
+            return queryset
 
-    # trong ApplicationViewSet
+        return Application.objects.none()
+
+    # /applications/{id}/update-status/
+    @action(
+        methods=['patch'],
+        detail=True,
+        url_path='update-status',
+        serializer_class=serializers.ApplicationUpdateSerializer
+    )
+    def update_status(self, request, pk=None):
+        application = self.get_object()
+
+        if application.status in ['accepted', 'rejected', 'withdrawn']:
+            return Response(
+                {'detail': f'Cannot change the status because the application had been accepted or rejected or candidate withdrawn ({application.status}).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = self.get_serializer(application, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            serializers.ApplicationSerializer(application).data,
+            status=status.HTTP_200_OK
+        )
+
+    # /applications/{id}/review/
+    @action(methods=['post'], detail=True, url_path='review')
+    def review(self, request, pk=None):
+
+        application = self.get_object()
+        if application.status == 'pending':
+            application.status = 'reviewed'
+            application.save(update_fields=['status'])
+
+        return Response(
+            serializers.ApplicationSerializer(application).data,
+            status=status.HTTP_200_OK
+        )
+
+    # /applications/{id}/withdraw/
+    @action(methods=['post'], detail=True, url_path='withdraw')
+    def withdraw(self, request, pk=None):
+        application = self.get_object()
+        if application.status not in ['pending', 'reviewed']:
+            return Response(
+                {'detail': "You just cannot change the application's status if it's status is pending or reviewed"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        application.status = 'withdrawn'
+        application.save()
+        return Response(
+            serializers.ApplicationSerializer(application).data,
+            status=status.HTTP_200_OK
+        )
+
     # def get_queryset(self):
-    #     user = self.request.user
-    #     queryset = super().get_queryset()
+    #     query = self.queryset
     #
-    #     if not user.is_authenticated:
-    #         return Application.objects.none()  # Không trả về gì nếu chưa đăng nhập
+    #     # /applications/?q=<keyword>
+    #     q = self.request.query_params.get('q')
+    #     if q:
+    #         query = query.filter(status__icontains=q)
     #
-    #     profile = getattr(user, 'profile', None)
-    #     if profile and profile.user_type == 'candidate':
-    #         # Ứng viên chỉ thấy application của mình
-    #         return queryset.filter(candidate=user)
-    #     elif profile and profile.user_type == 'employer':
-    #         # Nhà tuyển dụng chỉ thấy application cho các job của công ty mình
-    #         return queryset.filter(job__company__user=user)
-    #     elif user.is_staff:
-    #         return queryset  # Admin thấy tất cả
+    #     # /applications/?job_id=<id>
+    #     job_id = self.request.query_params.get('job_id')
+    #     if job_id:
+    #         query = query.filter(job_id=job_id)
     #
-    #     return Application.objects.none()  # Mặc định không trả về gì
+    #     return query
