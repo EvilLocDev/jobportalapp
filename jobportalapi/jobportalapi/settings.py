@@ -157,5 +157,11 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+OPENAI_API_KEY = "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"
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
 CLIENT_ID = 'oPE1IbyrWjHGbX5MB6VrgtzDEvLMWm4mWQqrmu5o'
 CLIENT_SECRET = 'ROSmb7qEVGddhEwlT0Af2x4iyqMGyeMz99GOPcXjGfb7rxWzMNmX4wepq5Unq2ETW5dghktcje3UyQQeaSKFGmcDAu61AZNW1eLjiCQqnBRzBvafuNUYdwh9GLd4BycX'

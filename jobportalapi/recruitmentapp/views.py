@@ -9,6 +9,11 @@ from rest_framework import viewsets, generics, parsers, permissions, status
 from .models import User, Profile, Resume, Company, Job, SaveJob, Application
 from django.utils import timezone
 
+from .task import process_resume
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
+
 class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
     queryset = User.objects.select_related('profile').filter(profile__active=True)
     pagination_class = paginators.ItemPaginator
@@ -117,6 +122,18 @@ class ResumeViewSet(viewsets.ModelViewSet):
     # Khi tao thi gang candidate la user
     def perform_create(self, serializer):
         serializer.save(candidate=self.request.user)
+
+    # Khi tao thi gang candidate la user
+    def perform_create(self, serializer):
+        resume = serializer.save(candidate=self.request.user)
+        # Kích hoạt tác vụ bất đồng bộ
+        process_resume.delay(resume.id)
+
+    def perform_update(self, serializer):
+        resume = serializer.save()
+        # Nếu file bị thay đổi, kích hoạt lại tác vụ
+        if 'file' in serializer.validated_data:
+            process_resume.delay(resume.id)
 
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.filter(active=True)
@@ -298,6 +315,69 @@ class JobViewSet(viewsets.ModelViewSet): # Du CRUD
         else:  # GET request
             applications = job.application_set.filter(active=True)
             return Response(serializers.ApplicationSerializer(applications, many=True).data)
+
+    # /jobs/{id}/calculate-fit/
+    @action(
+        methods=['post'],
+        detail=True,
+        url_path='calculate-fit',
+        permission_classes=[perms.IsCandidate]
+    )
+    def calculate_fit(self, request, pk=None):
+        job = self.get_object()
+        user = request.user
+
+        try:
+            # Lấy resume mặc định của ứng viên
+            default_resume = Resume.objects.get(candidate=user, is_default=True, active=True)
+        except Resume.DoesNotExist:
+            return Response(
+                {"detail": "Bạn chưa có resume mặc định. Vui lòng tải lên và đặt làm mặc định."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not default_resume.ai_analysis:
+            return Response(
+                {"detail": "Resume của bạn đang được xử lý. Vui lòng thử lại sau vài phút."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Lấy thông tin đã phân tích từ resume và mô tả công việc
+        resume_analysis = default_resume.ai_analysis
+        job_description = job.description
+
+        # Dùng LangChain & OpenAI để so sánh
+        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.2)
+
+        prompt_template = """
+        Bạn là một AI tư vấn nghề nghiệp. Hãy đánh giá mức độ phù hợp của một ứng viên cho một vị trí công việc dựa trên tóm tắt CV và mô tả công việc (JD).
+
+        Tóm tắt CV của ứng viên:
+        {resume_summary}
+
+        Mô tả công việc (JD):
+        {job_description}
+
+        Hãy trả về một đối tượng JSON với các key sau:
+        - "fit_score": một con số từ 0 đến 100 thể hiện mức độ phù hợp.
+        - "matching_skills": một danh sách các kỹ năng của ứng viên khớp với JD.
+        - "missing_skills": một danh sách các kỹ năng quan trọng trong JD mà ứng viên có vẻ chưa có.
+        - "summary": một đoạn văn (3-5 câu) giải thích tại sao ứng viên phù hợp hoặc chưa phù hợp, và đưa ra lời khuyên.
+
+        Chỉ trả về đối tượng JSON.
+        """
+
+        prompt = ChatPromptTemplate.from_template(prompt_template)
+        parser = JsonOutputParser()
+
+        chain = prompt | llm | parser
+
+        fit_result = chain.invoke({
+            "resume_summary": str(resume_analysis),
+            "job_description": job_description
+        })
+
+        return Response(fit_result, status=status.HTTP_200_OK)
 
 class ApplicationViewSet(viewsets.ViewSet, generics.RetrieveAPIView, generics.ListAPIView):
     # /applications/<id>

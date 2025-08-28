@@ -35,6 +35,9 @@ class Resume(BaseModel):
     file = CloudinaryField(null = True)
     is_default = models.BooleanField(default=False)
 
+    extracted_text = models.TextField(blank=True, null=True)
+    ai_analysis = models.JSONField(blank=True, null=True)
+
     def __str__(self):
         return self.title
 

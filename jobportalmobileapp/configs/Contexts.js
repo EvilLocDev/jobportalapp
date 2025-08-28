@@ -8,3 +8,6 @@ export const SavedJobsDispatchContext = createContext();
 
 export const MyApplicationsContext = createContext();
 export const MyApplicationsDispatchContext = createContext();
+
+export const JobFitContext = createContext();
+export const JobFitDispatchContext = createContext();
