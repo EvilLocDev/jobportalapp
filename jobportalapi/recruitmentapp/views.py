@@ -10,6 +10,10 @@ from .models import User, Profile, Resume, Company, Job, SaveJob, Application
 from django.utils import timezone
 
 from .task import process_resume
+
+from django.conf import settings
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
@@ -346,8 +350,10 @@ class JobViewSet(viewsets.ModelViewSet): # Du CRUD
         resume_analysis = default_resume.ai_analysis
         job_description = job.description
 
-        # Dùng LangChain & OpenAI để so sánh
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.2)
+        llm = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
+            google_api_key=settings.GOOGLE_API_KEY
+        )
 
         prompt_template = """
         Bạn là một AI tư vấn nghề nghiệp. Hãy đánh giá mức độ phù hợp của một ứng viên cho một vị trí công việc dựa trên tóm tắt CV và mô tả công việc (JD).

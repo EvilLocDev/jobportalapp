@@ -5,7 +5,7 @@ import { MyUserContext, SavedJobsContext, SavedJobsDispatchContext, JobFitContex
 import { useNavigation } from "@react-navigation/native";
 import Apis, { authApis, endpoints } from "../../configs/Apis";
 import RenderHTML from "react-native-render-html";
-import Styles from "./Styles";
+import Styles from "../Job/Styles";
 
 import ApplyJob from "../Application/ApplyJob";
 
@@ -116,7 +116,7 @@ const JobDetails = ({ route }) => {
                         </View>
 
                         <Card.Content style={Styles.cardContent}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <View>
                                 <Text style={[Styles.jobTitle, { flex: 1 }]}>{job.title}</Text>
 
                                 {user && user.profile.user_type === 'candidate' && (
@@ -224,51 +224,6 @@ const JobDetails = ({ route }) => {
     );
 }
 
-const Styles = StyleSheet.create({
-    modalContainer: {
-        backgroundColor: 'white',
-        padding: 20,
-        margin: 20,
-        borderRadius: 10,
-        maxHeight: '80%',
-    },
-    modalTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 15,
-    },
-    fitScoreText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        color: '#007bff',
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginTop: 15,
-        marginBottom: 5,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        paddingBottom: 5,
-    },
-    summaryText: {
-        fontSize: 16,
-        lineHeight: 24,
-    },
-    chipContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-    },
-    chip: {
-        margin: 4,
-        backgroundColor: '#e0f7fa',
-    },
-    chipMissing: {
-        margin: 4,
-        backgroundColor: '#ffebee',
-    }
-});
+
 
 export default JobDetails;

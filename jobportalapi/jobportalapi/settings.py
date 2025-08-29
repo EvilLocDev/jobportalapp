@@ -9,18 +9,23 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+import os
+from dotenv import load_dotenv
 
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-$^lan+gwgw*wc*ma&4odh@7m#u#nj2pvpzo=6+%se_lu2qz07n'
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -157,11 +162,12 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-OPENAI_API_KEY = "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"
-
+# CELERY SETTINGS
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 
 CLIENT_ID = 'oPE1IbyrWjHGbX5MB6VrgtzDEvLMWm4mWQqrmu5o'
 CLIENT_SECRET = 'ROSmb7qEVGddhEwlT0Af2x4iyqMGyeMz99GOPcXjGfb7rxWzMNmX4wepq5Unq2ETW5dghktcje3UyQQeaSKFGmcDAu61AZNW1eLjiCQqnBRzBvafuNUYdwh9GLd4BycX'

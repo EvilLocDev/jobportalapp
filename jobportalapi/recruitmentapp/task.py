@@ -1,13 +1,16 @@
 import tempfile
+import requests
+import cloudinary.api
 import cloudinary.uploader
 from celery import shared_task
 from langchain_openai import ChatOpenAI
+from django.conf import settings
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_community.document_loaders import PyPDFLoader
 
 from .models import Resume
-
 
 @shared_task
 def process_resume(resume_id):
@@ -18,9 +21,9 @@ def process_resume(resume_id):
 
         # 1. Tải file PDF từ Cloudinary về một file tạm
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            file_content = cloudinary.api.resource(resume.file.public_id, resource_type='raw')['url']
-            import requests
-            response = requests.get(file_content)
+            file_content_url = resume.file.url
+
+            response = requests.get(file_content_url)
             tmp.write(response.content)
             tmp_path = tmp.name
 
@@ -29,12 +32,10 @@ def process_resume(resume_id):
         pages = loader.load_and_split()
         resume_text = " ".join(page.page_content for page in pages)
 
-        # Lưu lại text đã trích xuất
         resume.extracted_text = resume_text
-        resume.save()
+        resume.save(update_fields=['extracted_text'])
 
-        # 3. Phân tích text bằng LangChain và OpenAI
-        llm = ChatOpenAI(model="gpt-4-turbo", temperature=0)  # Hoặc gpt-3.5-turbo để tiết kiệm chi phí
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=settings.GOOGLE_API_KEY)
 
         prompt_template = """
         Bạn là một chuyên gia tuyển dụng nhân sự. Dựa vào nội dung của CV sau đây, hãy trích xuất thông tin và trả về dưới dạng một đối tượng JSON.
@@ -58,7 +59,7 @@ def process_resume(resume_id):
         analysis_result = chain.invoke({"resume_text": resume_text})
 
         resume.ai_analysis = analysis_result
-        resume.save()
+        resume.save(update_fields=['ai_analysis'])
 
     except Resume.DoesNotExist:
         print(f"Resume with id {resume_id} not found.")
