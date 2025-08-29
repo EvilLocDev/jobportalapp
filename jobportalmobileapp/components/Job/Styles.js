@@ -14,10 +14,7 @@ export default StyleSheet.create({
         borderRadius: 12,
         elevation: 4,
         shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         backgroundColor: '#ffffff',
@@ -29,8 +26,7 @@ export default StyleSheet.create({
     },
     logoContainer: {
         alignItems: 'center',
-        padding: 20,
-        backgroundColor: '#f8f9fa',
+        paddingVertical: 12,
     },
     companyLogo: {
         width: 80,
@@ -43,30 +39,22 @@ export default StyleSheet.create({
         padding: 20,
     },
     jobTitle: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: 'bold',
         color: '#2c3e50',
         marginBottom: 12,
-        textAlign: 'center',
     },
     jobLocation: {
         fontSize: 16,
         color: '#6c757d',
         marginBottom: 8,
-        textAlign: 'center',
         fontStyle: 'italic',
     },
     jobSalary: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '600',
         color: '#28a745',
-        marginBottom: 16,
-        textAlign: 'center',
-        backgroundColor: '#d4edda',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        alignSelf: 'center',
+        marginBottom: 12,
     },
     descriptionContainer: {
         marginTop: 16,
@@ -87,22 +75,17 @@ export default StyleSheet.create({
         padding: 20,
     },
     companyInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-        paddingHorizontal: 20,
+        marginBottom: 12,
     },
     companyName: {
         fontSize: 16,
         fontWeight: '500',
         color: '#495057',
-        marginLeft: 12,
     },
     tagsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         marginTop: 12,
-        justifyContent: 'center',
     },
     tag: {
         backgroundColor: '#007bff',
@@ -117,4 +100,48 @@ export default StyleSheet.create({
         fontSize: 12,
         fontWeight: '500',
     },
+    modalContainer: {
+        backgroundColor: 'white',
+        padding: 16,
+        margin: 12,
+        borderRadius: 10,
+        maxHeight: '85%',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    fitScoreText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        color: '#007bff',
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginTop: 15,
+        marginBottom: 5,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        paddingBottom: 5,
+    },
+    summaryText: {
+        fontSize: 15,
+        lineHeight: 22,
+    },
+    chipContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    chip: {
+        margin: 4,
+        backgroundColor: '#e0f7fa',
+    },
+    chipMissing: {
+        margin: 4,
+        backgroundColor: '#ffebee',
+    }
 });

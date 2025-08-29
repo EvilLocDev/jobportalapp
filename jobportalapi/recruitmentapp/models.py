@@ -32,8 +32,11 @@ class Profile(BaseModel):
 class Resume(BaseModel):
     candidate = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     title = models.CharField(max_length=255)
-    file = CloudinaryField(null = True)
+    file = CloudinaryField('raw', resource_type='raw', null=True)
     is_default = models.BooleanField(default=False)
+
+    extracted_text = models.TextField(blank=True, null=True)
+    ai_analysis = models.JSONField(blank=True, null=True)
 
     def __str__(self):
         return self.title

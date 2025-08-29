@@ -33,6 +33,8 @@ export const endpoints = {
     'review-application': (applicationId) => `/applications/${applicationId}/review/`,
     'withdraw-application': (applicationId) => `/applications/${applicationId}/withdraw/`,
     'my-applications': '/applications/',
+
+    'calculate-job-fit': (jobId) => `/jobs/${jobId}/calculate-fit/`,
 };
 
 export const authApis = (token) => {

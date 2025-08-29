@@ -1,9 +1,12 @@
 import { useContext, useReducer, useEffect } from "react";
 
-import { MyDispatchContext, MyUserContext, SavedJobsContext, SavedJobsDispatchContext, MyApplicationsContext, MyApplicationsDispatchContext } from "./configs/Contexts";
+import { MyDispatchContext, MyUserContext, SavedJobsContext, SavedJobsDispatchContext,
+    MyApplicationsContext, MyApplicationsDispatchContext, JobFitContext, JobFitDispatchContext} from "./configs/Contexts";
 import MyUserReducer from "./reducers/MyUserReducer";
 import SavedJobsReducer from "./reducers/SavedJobsReducer";
 import MyApplicationsReducer from "./reducers/MyApplicationsReducer";
+import JobFitReducer from "./reducers/JobFitReducer";
+
 import { authApis, endpoints } from "./configs/Apis";
 
 import Home from "./components/Home/Home";
@@ -167,6 +170,12 @@ const App = () => {
     const [savedJobs, savedJobsDispatch] = useReducer(SavedJobsReducer, []);
     const [myApplications, myApplicationsDispatch] = useReducer(MyApplicationsReducer, []);
 
+    const [jobFit, jobFitDispatch] = useReducer(JobFitReducer, {
+        loading: false,
+        data: null,
+        error: null,
+    });
+
     console.log("App user state:", user);
 
     useEffect(() => {
@@ -219,10 +228,15 @@ const App = () => {
                             <MyApplicationsContext.Provider value={myApplications}>
                                 <MyApplicationsDispatchContext.Provider value={myApplicationsDispatch}>
 
-                                    <NavigationContainer>
-                                        <TabNavigator />
-                                    </NavigationContainer>
+                                    <JobFitContext.Provider value={jobFit}>
+                                        <JobFitDispatchContext.Provider value={jobFitDispatch}>
 
+                                            <NavigationContainer>
+                                                <TabNavigator />
+                                            </NavigationContainer>
+
+                                        </JobFitDispatchContext.Provider>
+                                    </JobFitContext.Provider>
                                 </MyApplicationsDispatchContext.Provider>
                             </MyApplicationsContext.Provider>
                         </SavedJobsDispatchContext.Provider>
