@@ -1,3 +1,7 @@
+import os
+from django.conf import settings
+from django.db import models
+
 from django.db.models import Q, OuterRef, Exists
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -8,6 +12,11 @@ from . import serializers, paginators
 from rest_framework import viewsets, generics, parsers, permissions, status
 from .models import User, Profile, Resume, Company, Job, SaveJob, Application
 from django.utils import timezone
+
+from .utils import extract_text_from_pdf_url
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import GPT4AllEmbeddings
+# from langchain_community.embeddings import SentenceTransformerEmbeddings
 
 class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
     queryset = User.objects.select_related('profile').filter(profile__active=True)
@@ -78,6 +87,67 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
         u = request.user
         jobs = u.savejob_set.filter(active=True)
         return Response(serializers.SaveJobSerializer(jobs, many=True).data)
+
+    # /users/current-user/recommendations/
+    @action(
+        methods=['get'],
+        detail=False,
+        url_path='recommendations',
+        permission_classes=[permissions.IsAuthenticated, perms.IsCandidate]
+    )
+    def get_job_recommendations(self, request):
+        user = request.user
+
+        # 1. Tìm CV mặc định của ứng viên
+        try:
+            default_resume = Resume.objects.get(candidate=user, is_default=True, active=True)
+        except Resume.DoesNotExist:
+            return Response(
+                {"detail": "Bạn cần có một CV mặc định (is_default=True) để nhận gợi ý."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not default_resume.file:
+            return Response(
+                {"detail": "CV mặc định của bạn chưa được tải lên."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 2. Tải và trích xuất nội dung từ CV
+        cv_url = default_resume.file.url
+        cv_text = extract_text_from_pdf_url(cv_url)
+
+        if not cv_text:
+            return Response(
+                {"detail": "Không thể đọc nội dung từ file CV của bạn. Vui lòng kiểm tra lại file."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        # 3. Tải Vector DB và mô hình embedding
+        vector_db_path = os.path.join(settings.BASE_DIR, "vectorstores/job_db_faiss")
+
+        model_path = os.path.join(settings.BASE_DIR, "models/all-MiniLM-L6-v2-f16.gguf")
+        embedding_model = GPT4AllEmbeddings(model_file=model_path)
+
+        db = FAISS.load_local(vector_db_path, embedding_model, allow_dangerous_deserialization=True)
+
+        # 4. Thực hiện tìm kiếm tương đồng
+        retriever = db.as_retriever(search_kwargs={"k": 5})
+        similar_docs = retriever.invoke(cv_text)
+
+        # 5. Lấy Job ID từ metadata và loại bỏ các ID trùng lặp
+        job_ids = list(set([doc.metadata['job_id'] for doc in similar_docs]))
+
+        if not job_ids:
+            return Response([], status=status.HTTP_200_OK)
+
+        # 6. Truy vấn DB chính để lấy thông tin đầy đủ của các Job
+        preserved_order = models.Case(*[models.When(pk=pk, then=pos) for pos, pk in enumerate(job_ids)])
+        recommended_jobs = Job.objects.filter(pk__in=job_ids).order_by(preserved_order)
+
+        # 7. Serialize và trả về kết quả
+        serializer = serializers.JobDetailSerializer(recommended_jobs, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ProfileViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
     queryset = Profile.objects.filter(active = True)
