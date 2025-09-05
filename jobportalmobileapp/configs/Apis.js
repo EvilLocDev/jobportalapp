@@ -26,6 +26,7 @@ export const endpoints = {
     'current-user': '/users/current-user/',
     'change-password': '/users/change-password/',
 
+    'recommendations': '/users/recommendations/',
     'apply-job': (jobId) => `/jobs/${jobId}/applications/`,
     'job-applications': (jobId) => `/jobs/${jobId}/applications/`,
     'application-details': (applicationId) => `/applications/${applicationId}/`,

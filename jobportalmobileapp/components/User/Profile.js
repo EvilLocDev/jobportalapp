@@ -1,5 +1,5 @@
 import React, { useContext, useState, useCallback } from "react";
-import { View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, ScrollView, TouchableOpacity, Alert, Image } from "react-native";
 import { MyDispatchContext, MyUserContext } from "../../configs/Contexts";
 import MyStyles from "../../styles/MyStyles";
 
@@ -144,10 +144,10 @@ const Profile = () => {
                 </TouchableOpacity>
             </View>
             
-            <TextInput label="Tên" value={userInfo.first_name} onChangeText={(t) => updateState('first_name', t)} style={MyStyles.m} />
-            <TextInput label="Họ" value={userInfo.last_name} onChangeText={(t) => updateState('last_name', t)} style={MyStyles.m} />
+            <TextInput label="Fist name" value={userInfo.first_name} onChangeText={(t) => updateState('first_name', t)} style={MyStyles.m} />
+            <TextInput label="Last name" value={userInfo.last_name} onChangeText={(t) => updateState('last_name', t)} style={MyStyles.m} />
             <TextInput label="Email" value={userInfo.email} editable={false} style={MyStyles.m} />
-            <TextInput label="SDT" value={userInfo.phone_number} onChangeText={(t) => updateState('phone_number', t)} style={MyStyles.m} keyboardType="phone-pad" />
+            <TextInput label="Phone number" value={userInfo.phone_number} onChangeText={(t) => updateState('phone_number', t)} style={MyStyles.m} keyboardType="phone-pad" />
             <TextInput label="Address" value={userInfo.address} onChangeText={(t) => updateState('address', t)} style={MyStyles.m} />
             
             <View style={MyStyles.m}>
@@ -163,11 +163,11 @@ const Profile = () => {
                     <RadioButton.Group onValueChange={newValue => updateState('user_type', newValue)} value={userInfo.user_type}>
                         <View style={MyStyles.row}>
                             <RadioButton value="candidate" />
-                            <Text>Ứng viên</Text>
+                            <Text>Candidate</Text>
                         </View>
                         <View style={MyStyles.row}>
                             <RadioButton value="employer" />
-                            <Text>Nhà tuyển dụng</Text>
+                            <Text>Employer</Text>
                         </View>
                     </RadioButton.Group>
                 )}
@@ -184,6 +184,15 @@ const Profile = () => {
                         style={MyStyles.m}
                     >
                         Resume Management
+                    </Button>
+
+                    <Button 
+                        icon="clipboard-text-clock" 
+                        mode="contained-tonal" 
+                        onPress={() => nav.navigate('RecommendedJobs')}
+                        style={MyStyles.m}
+                    >
+                        Recommend Jobs
                     </Button>
 
                     <Button 
