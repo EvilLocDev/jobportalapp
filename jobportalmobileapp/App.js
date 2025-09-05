@@ -15,6 +15,8 @@ import Register from "./components/User/Register";
 import Profile from "./components/User/Profile";
 import ChangePassword from "./components/User/ChangePassword";
 import JobDetails from "./components/Job/JobDetails";
+
+import RecommendedJobs from "./components/Job/RecommendedJobs";
 import SaveJobs from "./components/User/SaveJobs";
 import ResumeManagement from "./components/Resume/ResumeManagement";
 
@@ -48,6 +50,7 @@ const ProfileStackNavigator = () => {
             <ProfileStack.Screen name="ChangePassword" component={ChangePassword} options={{ title: "Change password" }} />
             <ProfileStack.Screen name="ResumeManagement" component={ResumeManagement} options={{ title: "Resume management" }} />
             <ProfileStack.Screen name="MyApplications" component={MyApplications} options={{ title: "Jobs applied" }} />
+            <ProfileStack.Screen name="RecommendedJobs" component={RecommendedJobs} options={{ title: "Recommended Jobs" }} />
         </ProfileStack.Navigator>
     );
 }
@@ -55,51 +58,15 @@ const ProfileStackNavigator = () => {
 const EmployerStackNavigator = () => {
     return (
         <EmployerStack.Navigator>
-            <EmployerStack.Screen 
-                name="MyCompanies" 
-                component={MyCompanies} 
-                options={{ title: "Company Management" }} 
-            />
-            <EmployerStack.Screen 
-                name="CreateCompany" 
-                component={CreateCompany} 
-                options={{ title: "Create New Company" }} 
-            />
-            <EmployerStack.Screen 
-                name="EditCompany" 
-                component={EditCompany} 
-                options={{ title: "Edit Comapany" }} 
-            />
-            <EmployerStack.Screen 
-                name="CompanyJobManagement" 
-                component={CompanyJobManagement} 
-                options={({ route }) => ({ title: `Job at ${route.params?.companyName}` })}
-            />
-            <EmployerStack.Screen 
-                name="CreateJob" 
-                component={CreateJob} 
-                options={{ title: "Create new Job" }} 
-            />
-            <EmployerStack.Screen 
-                name="EditJob" 
-                component={EditJob} 
-                options={{ title: "Edit Job" }} 
-            />
-            <EmployerStack.Screen 
-                name="EmployerJobDetail"
-                component={JobDetails}
-                options={{ title: "Job Details" }} 
-            />
-            <EmployerStack.Screen 
-                name="Applications"
-                component={Applications}
-                options={({ route }) => ({ title: `Candidate for: ${route.params?.jobTitle}` })}
-            />
-            <EmployerStack.Screen 
-                name="ApplicationDetails"
-                component={ApplicationDetails}
-                options={{ title: "Application Details" }} 
-            />
+            <EmployerStack.Screen name="MyCompanies" component={MyCompanies} options={{ title: "Company Management" }}/>
+            <EmployerStack.Screen name="CreateCompany" component={CreateCompany} options={{ title: "Create New Company" }} />
+            <EmployerStack.Screen name="EditCompany" component={EditCompany} options={{ title: "Edit Comapany" }} />
+            <EmployerStack.Screen name="CompanyJobManagement" component={CompanyJobManagement} options={({ route }) => ({ title: `Job at ${route.params?.companyName}` })} />
+            <EmployerStack.Screen name="CreateJob" component={CreateJob} options={{ title: "Create new Job" }} />
+            <EmployerStack.Screen name="EditJob" component={EditJob} options={{ title: "Edit Job" }} />
+            <EmployerStack.Screen name="EmployerJobDetail" component={JobDetails} options={{ title: "Job Details" }} />
+            <EmployerStack.Screen name="Applications" component={Applications} options={({ route }) => ({ title: `Candidate for: ${route.params?.jobTitle}` })} />
+            <EmployerStack.Screen name="ApplicationDetails" component={ApplicationDetails} options={{ title: "Application Details" }} />
         </EmployerStack.Navigator>
     );
 }
@@ -107,8 +74,8 @@ const EmployerStackNavigator = () => {
 const StackNavigator = () => {
     return (
         <Stack.Navigator>
-            <Stack.Screen name="home" component={Home} options={{ title: "Danh sách công ty" }} />
-            <Stack.Screen name="job-details" component={JobDetails} options={{ title: "Chi tiết công việc" }} />
+            <Stack.Screen name="home" component={Home} options={{ title: "Company List" }} />
+            <Stack.Screen name="job-details" component={JobDetails} options={{ title: "Job Details" }} />
         </Stack.Navigator>
     )
 };

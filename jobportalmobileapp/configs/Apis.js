@@ -14,7 +14,6 @@ export const endpoints = {
     'company-details': (companyId) => `/companies/${companyId}/`,
     'save-job': (jobId) => `/jobs/${jobId}/save-job/`,
     'saved-jobs': '/users/saved-jobs/',
-    'apply-job': (jobId) => `/jobs/${jobId}/applications/`,
 
     'my-companies': '/companies/?my_companies=true',
     'my-jobs': (companyId) => `/jobs/?my_jobs=true&company_id=${companyId}`,
@@ -26,6 +25,7 @@ export const endpoints = {
     'current-user': '/users/current-user/',
     'change-password': '/users/change-password/',
 
+    'recommendations': '/users/recommendations/',
     'apply-job': (jobId) => `/jobs/${jobId}/applications/`,
     'job-applications': (jobId) => `/jobs/${jobId}/applications/`,
     'application-details': (applicationId) => `/applications/${applicationId}/`,
