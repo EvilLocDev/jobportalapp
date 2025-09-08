@@ -91,6 +91,7 @@ class Application(BaseModel):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
         ('reviewed', 'Reviewed'),
+        ('interview', 'Interview'),
         ('rejected', 'Rejected'),
         ('accepted', 'Accepted'),
         ('withdrawn', 'Withdrawn')
@@ -104,6 +105,22 @@ class Application(BaseModel):
     class Meta:
         ordering = ['-id',]
         unique_together = ('job', 'candidate')
+
+class Interview(BaseModel):
+    STATUS_CHOICES = (
+        ('scheduled', 'Scheduled'),
+        ('completed', 'Completed'),
+        ('canceled', 'Canceled'),
+    )
+
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='interviews')
+    scheduled_time = models.DateTimeField()
+    interview_link = models.URLField(max_length=500, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Interview for {self.application.candidate.username} with {self.application.job.company.name}"
 
 class SaveJob(BaseModel):
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
