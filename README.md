@@ -18,8 +18,8 @@ GOOGLE_API_KEY=your_google_api_key
 ```
 
 ## Overview
-Hệ thống sử dụng kỹ thuật RAG nhằm nâng cao hiệu quả của hệ thống gợi ý việc làm. Phương pháp RAG có thể sử dụng cả hai cách truy xuất thông tin là từ khóa và tương đồng vector, sau đó phân tích và xếp hạng lại các kết quả. Điều này không chỉ giúp cải thiện độ chính xác mà còn cung cấp giải thích hợp lý cho ứng viên.
-
+- Hệ thống sử dụng kỹ thuật RAG nhằm nâng cao hiệu quả của hệ thống gợi ý việc làm. Phương pháp RAG có thể sử dụng cả hai cách truy xuất thông tin là từ khóa và tương đồng vector, sau đó phân tích và xếp hạng lại các kết quả. Điều này không chỉ giúp cải thiện độ chính xác mà còn cung cấp giải thích hợp lý cho ứng viên.
+- Đến thời điểm viết `readme.md`, hệ thống có khả năng phân tích ngữ nghĩa (semantic) của CV ứng viên để truy xuất và đề xuất những tin tuyển dụng phù hợp nhất. Kết quả đánh giá offline trên tập dữ liệu mẫu cho thấy hiệu quả rất cao với chỉ số **Hit Rate @10 đạt 93.90%** và **MRR đạt 0.7452**.
 
 ## Technical
 - **Frontend**: React / React Native
