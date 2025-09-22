@@ -36,6 +36,7 @@ export const endpoints = {
     'my-applications': '/applications/',
 
     'calculate-job-fit': (jobId) => `/jobs/${jobId}/calculate-fit/`,
+    // 'explain-job-fit': (jobId) => `/jobs/${jobId}/explain-fit/`,
 };
 
 export const authApis = (token) => {

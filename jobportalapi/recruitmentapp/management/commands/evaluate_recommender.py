@@ -68,7 +68,7 @@ class Command(BaseCommand):
         # --- 4. "KIỂM THỬ" (Đưa ra gợi ý cho tập Test) ---
         self.stdout.write("\nBước 4: Đang thực hiện gợi ý trên tập test...")
         results = []
-        K = 10  # Lấy top 10 gợi ý
+        K = 5  # Lấy top 5 gợi ý
 
         for _, row in tqdm(test_applicants.iterrows(), total=len(test_applicants)):
             cv_text = row['Resume']
