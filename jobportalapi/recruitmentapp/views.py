@@ -1,3 +1,4 @@
+import json
 import os
 from django.conf import settings
 from django.db import models
@@ -22,7 +23,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
-from .utils import extract_text_from_pdf_url
+from .utils import extract_text_from_pdf_url, generate_job_explanation
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import GPT4AllEmbeddings
 # from langchain_community.embeddings import SentenceTransformerEmbeddings
@@ -155,8 +156,20 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
         recommended_jobs = Job.objects.filter(pk__in=job_ids).order_by(preserved_order)
 
         # 7. Serialize và trả về kết quả
-        serializer = serializers.JobDetailSerializer(recommended_jobs, many=True, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # serializer = serializers.JobDetailSerializer(recommended_jobs, many=True, context={'request': request})
+        # return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # 8. Generation
+        explanations = []
+        for job in recommended_jobs:
+            cv_summary = default_resume.ai_analysis
+            job_description = job.description
+            explanation = generate_job_explanation(cv_summary, job_description)
+            explanations.append({
+                "job": serializers.JobDetailSerializer(job, context={'request': request}).data,
+                "fit_analysis": explanation,
+            })
+        return Response(explanations, status=status.HTTP_200_OK)
 
 class ProfileViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
     queryset = Profile.objects.filter(active = True)
@@ -390,6 +403,46 @@ class JobViewSet(viewsets.ModelViewSet): # Du CRUD
             applications = job.application_set.filter(active=True)
             return Response(serializers.ApplicationSerializer(applications, many=True).data)
 
+    # /jobs/{id}/explain-fit/
+    @action(methods=['get'], detail=True, url_path='explain-fit')
+    def explain_fit(self, request, pk=None):
+        job = self.get_object()
+        user = request.user
+
+        if not user.is_authenticated:
+            return Response({'detail': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        resume = Resume.objects.filter(candidate=user, is_default=True, ai_analysis__isnull=False).first()
+        if not resume:
+            resume = Resume.objects.filter(candidate=user, ai_analysis__isnull=False).order_by(
+                '-created_date').first()
+
+        if not resume:
+            return Response(
+                {'detail': 'No analyzed resume found for this user. Please upload and process a resume.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        cv_summary = resume.ai_analysis.get('summary', '')
+        if not cv_summary:
+            return Response(
+                {'detail': 'Resume analysis summary is not available.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        explanation_json = generate_job_explanation(cv_summary, job.description)
+
+        try:
+            # Chuyển đổi chuỗi JSON trả về từ LLM thành đối tượng Python dict
+            import json
+            explanation_data = json.loads(explanation_json)
+            return Response(explanation_data, status=status.HTTP_200_OK)
+        except json.JSONDecodeError:
+            # Nếu LLM không trả về JSON hợp lệ, trả về dạng text thô
+            return Response({'explanation_text': explanation_json}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     # /jobs/{id}/calculate-fit/
     @action(
         methods=['post'],
@@ -426,22 +479,22 @@ class JobViewSet(viewsets.ModelViewSet): # Du CRUD
         )
 
         prompt_template = """
-        Bạn là một AI tư vấn nghề nghiệp. Hãy đánh giá mức độ phù hợp của một ứng viên cho một vị trí công việc dựa trên tóm tắt CV và mô tả công việc (JD).
+            Bạn là một AI tư vấn nghề nghiệp. Hãy đánh giá mức độ phù hợp của một ứng viên cho một vị trí công việc dựa trên tóm tắt CV và mô tả công việc (JD).
 
-        Tóm tắt CV của ứng viên:
-        {resume_summary}
+            Tóm tắt CV của ứng viên:
+            {resume_summary}
 
-        Mô tả công việc (JD):
-        {job_description}
+            Mô tả công việc (JD):
+            {job_description}
 
-        Hãy trả về một đối tượng JSON với các key sau:
-        - "fit_score": một con số từ 0 đến 100 thể hiện mức độ phù hợp.
-        - "matching_skills": một danh sách các kỹ năng của ứng viên khớp với JD.
-        - "missing_skills": một danh sách các kỹ năng quan trọng trong JD mà ứng viên có vẻ chưa có.
-        - "summary": một đoạn văn (3-5 câu) giải thích tại sao ứng viên phù hợp hoặc chưa phù hợp, và đưa ra lời khuyên.
+            Hãy trả về một đối tượng JSON với các key sau:
+            - "fit_score": một con số từ 0 đến 100 thể hiện mức độ phù hợp.
+            - "matching_skills": một danh sách các kỹ năng của ứng viên khớp với JD.
+            - "missing_skills": một danh sách các kỹ năng quan trọng trong JD mà ứng viên có vẻ chưa có.
+            - "summary": một đoạn văn (3-5 câu) giải thích tại sao ứng viên phù hợp hoặc chưa phù hợp, và đưa ra lời khuyên.
 
-        Chỉ trả về đối tượng JSON.
-        """
+            Chỉ trả về đối tượng JSON.
+            """
 
         prompt = ChatPromptTemplate.from_template(prompt_template)
         parser = JsonOutputParser()
